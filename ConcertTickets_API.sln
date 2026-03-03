@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35931.197
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConcertTickets_API", "ConertTickets\ConcertTickets_API.csproj", "{817F5267-4CFD-48D4-BE36-8A6287FB47F7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConcertTickets_API.Domain", "ConcertTickets.Domain\ConcertTickets_API.Domain.csproj", "{A04D687E-BBFA-490B-9C09-B110BC22796E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConcertTickets_API.DataAccess", "ConcertTickets.DataAccess\ConcertTickets_API.DataAccess.csproj", "{793226FE-8703-40E4-8D4C-977F887343E4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		docker-compose.yml = docker-compose.yml
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{817F5267-4CFD-48D4-BE36-8A6287FB47F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{817F5267-4CFD-48D4-BE36-8A6287FB47F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{817F5267-4CFD-48D4-BE36-8A6287FB47F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{817F5267-4CFD-48D4-BE36-8A6287FB47F7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A04D687E-BBFA-490B-9C09-B110BC22796E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A04D687E-BBFA-490B-9C09-B110BC22796E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A04D687E-BBFA-490B-9C09-B110BC22796E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A04D687E-BBFA-490B-9C09-B110BC22796E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{793226FE-8703-40E4-8D4C-977F887343E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{793226FE-8703-40E4-8D4C-977F887343E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{793226FE-8703-40E4-8D4C-977F887343E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{793226FE-8703-40E4-8D4C-977F887343E4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CFC0D8E1-342D-456D-9F1B-574C4D024BF3}
+	EndGlobalSection
+EndGlobal

@@ -18,11 +18,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="DTO\" />
     <Folder Include="Integration\" />
     <Folder Include="Data\" />
     <Folder Include="Configuration\" />
-    <Folder Include="Services\" />
   </ItemGroup>
 
   <ItemGroup>

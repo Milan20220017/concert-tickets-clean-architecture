@@ -3,6 +3,7 @@ using System;
 using ConcertTickets_API.DataAccess.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ConcertTickets_API.DataAccess.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260304085447_AddCurrencyAndTicketPrice")]
+    partial class AddCurrencyAndTicketPrice
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -136,56 +139,6 @@ namespace ConcertTickets_API.DataAccess.Migrations
                     b.ToTable("RegionSeatings");
                 });
 
-            modelBuilder.Entity("ConcertTickets_API.Domain.Models.Reservation", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ConcertId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("CurrencyId")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("DiscountPercentApplied")
-                        .HasColumnType("numeric");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("LoginCode")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<decimal>("TotalPrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<int?>("UsedPromoCodeId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ConcertId");
-
-                    b.HasIndex("CurrencyId");
-
-                    b.HasIndex("UsedPromoCodeId");
-
-                    b.ToTable("Reservations");
-                });
-
             modelBuilder.Entity("ConcertTickets_API.Domain.Models.TicketPrice", b =>
                 {
                     b.Property<int>("Id")
@@ -219,68 +172,6 @@ namespace ConcertTickets_API.DataAccess.Migrations
                     b.ToTable("TicketPrices");
                 });
 
-            modelBuilder.Entity("PromoCode", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("CreatedByReservationId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int?>("UsedByReservationId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Code")
-                        .IsUnique();
-
-                    b.HasIndex("CreatedByReservationId")
-                        .IsUnique();
-
-                    b.HasIndex("UsedByReservationId")
-                        .IsUnique();
-
-                    b.ToTable("PromoCodes");
-                });
-
-            modelBuilder.Entity("ReservationItem", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("RegionSeatingId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ReservationId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RegionSeatingId");
-
-                    b.HasIndex("ReservationId");
-
-                    b.ToTable("ReservationItems");
-                });
-
             modelBuilder.Entity("ConcertTickets_API.Domain.Models.Concert", b =>
                 {
                     b.HasOne("ConcertTickets_API.Domain.Models.Category", "Category")
@@ -311,32 +202,6 @@ namespace ConcertTickets_API.DataAccess.Migrations
                     b.Navigation("Location");
                 });
 
-            modelBuilder.Entity("ConcertTickets_API.Domain.Models.Reservation", b =>
-                {
-                    b.HasOne("ConcertTickets_API.Domain.Models.Concert", "Concert")
-                        .WithMany()
-                        .HasForeignKey("ConcertId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ConcertTickets_API.Domain.Models.Currency", "Currency")
-                        .WithMany()
-                        .HasForeignKey("CurrencyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PromoCode", "UsedPromoCode")
-                        .WithMany()
-                        .HasForeignKey("UsedPromoCodeId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Concert");
-
-                    b.Navigation("Currency");
-
-                    b.Navigation("UsedPromoCode");
-                });
-
             modelBuilder.Entity("ConcertTickets_API.Domain.Models.TicketPrice", b =>
                 {
                     b.HasOne("ConcertTickets_API.Domain.Models.Concert", "Concert")
@@ -364,53 +229,9 @@ namespace ConcertTickets_API.DataAccess.Migrations
                     b.Navigation("RegionSeating");
                 });
 
-            modelBuilder.Entity("PromoCode", b =>
-                {
-                    b.HasOne("ConcertTickets_API.Domain.Models.Reservation", "CreatedByReservation")
-                        .WithOne("GeneratedPromoCode")
-                        .HasForeignKey("PromoCode", "CreatedByReservationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ConcertTickets_API.Domain.Models.Reservation", "UsedByReservation")
-                        .WithOne()
-                        .HasForeignKey("PromoCode", "UsedByReservationId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("CreatedByReservation");
-
-                    b.Navigation("UsedByReservation");
-                });
-
-            modelBuilder.Entity("ReservationItem", b =>
-                {
-                    b.HasOne("ConcertTickets_API.Domain.Models.RegionSeating", "RegionSeating")
-                        .WithMany()
-                        .HasForeignKey("RegionSeatingId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ConcertTickets_API.Domain.Models.Reservation", "Reservation")
-                        .WithMany("Items")
-                        .HasForeignKey("ReservationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("RegionSeating");
-
-                    b.Navigation("Reservation");
-                });
-
             modelBuilder.Entity("ConcertTickets_API.Domain.Models.Location", b =>
                 {
                     b.Navigation("Regions");
-                });
-
-            modelBuilder.Entity("ConcertTickets_API.Domain.Models.Reservation", b =>
-                {
-                    b.Navigation("GeneratedPromoCode");
-
-                    b.Navigation("Items");
                 });
 #pragma warning restore 612, 618
         }

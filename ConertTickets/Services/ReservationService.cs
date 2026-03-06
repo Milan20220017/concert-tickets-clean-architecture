@@ -11,14 +11,16 @@ public class ReservationService
     private readonly ITicketPriceRepository _prices;
     private readonly IPromoCodeRepository _promoCodes;
     private readonly IRegionSeatingRepository _regions;
+    private readonly ExchangeRateService _exchangeRateService;
 
     public ReservationService(
-        IReservationRepository reservations,
-        IConcertRepository concerts,
-        IRegionSeatingRepository regions,
-        ICurrencyRepository currencies,
-        ITicketPriceRepository prices,
-        IPromoCodeRepository promoCodes)
+       IReservationRepository reservations,
+       IConcertRepository concerts,
+       IRegionSeatingRepository regions,
+       ICurrencyRepository currencies,
+       ITicketPriceRepository prices,
+       IPromoCodeRepository promoCodes,
+       ExchangeRateService exchangeRateService)
     {
         _reservations = reservations;
         _concerts = concerts;
@@ -26,10 +28,14 @@ public class ReservationService
         _prices = prices;
         _promoCodes = promoCodes;
         _regions = regions;
+        _exchangeRateService = exchangeRateService;
     }
 
     public Task<Reservation?> GetByLoginCodeAsync(string loginCode, CancellationToken ct = default)
         => _reservations.GetByLoginCodeAsync(loginCode, includeItems: true, ct);
+
+    public Task<Reservation?> GetByIdAsync(int id, CancellationToken ct = default)
+        => _reservations.GetByIdAsync(id, includeItems: true, ct);
 
     public async Task<Reservation> CreateAsync(
         int concertId,
@@ -40,21 +46,31 @@ public class ReservationService
         CancellationToken ct = default)
     {
         email = (email ?? "").Trim();
-        if (email.Length < 5) throw new ArgumentException("Email nije validan.");
-        if (items is null || items.Count == 0) throw new ArgumentException("Moraš dodati bar jednu stavku.");
+        if (email.Length < 5)
+            throw new ArgumentException("Email nije validan.");
+
+        if (items is null || items.Count == 0)
+            throw new ArgumentException("Moraš dodati bar jednu stavku.");
 
         if (usedPromoCodeId.HasValue && usedPromoCodeId.Value <= 0)
             usedPromoCodeId = null;
 
         var concert = await _concerts.GetByIdAsync(concertId, includeRefs: false, ct);
-        if (concert is null) throw new ArgumentException("Koncert ne postoji.");
+        if (concert is null)
+            throw new ArgumentException("Koncert ne postoji.");
 
-        var currency = await _currencies.GetByIdAsync(currencyId, ct);
-        if (currency is null) throw new ArgumentException("Valuta ne postoji.");
+        var selectedCurrency = await _currencies.GetByIdAsync(currencyId, ct);
+        if (selectedCurrency is null)
+            throw new ArgumentException("Valuta ne postoji.");
+
+        var baseCurrency = await _currencies.GetByCodeAsync("EUR", ct);
+        if (baseCurrency is null)
+            throw new ArgumentException("Bazna valuta EUR nije definisana.");
 
         var allPrices = await _prices.GetByConcertAsync(concertId, ct);
-        var priceMap = allPrices
-            .Where(p => p.CurrencyId == currencyId)
+
+        var basePriceMap = allPrices
+            .Where(p => p.CurrencyId == baseCurrency.Id)
             .ToDictionary(p => p.RegionSeatingId, p => p.Amount);
 
         var concertUtc = concert.Date;
@@ -67,7 +83,6 @@ public class ReservationService
         bool earlyBirdActive = DateTime.UtcNow <= discountUntil;
         decimal earlyBirdMultiplier = earlyBirdActive ? 0.9m : 1m;
 
-        // PROMO kod (dodatnih 10% popusta na total)
         PromoCode? promo = null;
         bool promoApplied = false;
 
@@ -102,13 +117,13 @@ public class ReservationService
 
         foreach (var (regionId, qty) in items)
         {
-            if (qty <= 0) throw new ArgumentException("Količina mora biti > 0.");
+            if (qty <= 0)
+                throw new ArgumentException("Količina mora biti > 0.");
 
             var region = await _regions.GetByIdAsync(regionId, ct);
             if (region is null)
                 throw new ArgumentException("Region sjedenja ne postoji.");
 
-            // capacity check
             var alreadyReserved = await _reservations.GetReservedCountAsync(concertId, regionId, ct);
             if (alreadyReserved + qty > region.Capacity)
             {
@@ -116,11 +131,19 @@ public class ReservationService
                 throw new ArgumentException($"Nema dovoljno mjesta u regionu '{region.Name}'. Preostalo: {remaining}.");
             }
 
-            if (!priceMap.TryGetValue(regionId, out var baseUnitPrice))
-                throw new ArgumentException("Nema cijene za izabrani region u ovoj valuti.");
+            if (!basePriceMap.TryGetValue(regionId, out var baseUnitPrice))
+                throw new ArgumentException("Nema bazne cijene za izabrani region.");
 
-            var finalUnitPrice = baseUnitPrice * earlyBirdMultiplier;
-            total += finalUnitPrice * qty;
+            var discountedBasePrice = baseUnitPrice * earlyBirdMultiplier;
+
+            var convertedUnitPrice = await _exchangeRateService.ConvertAsync(
+                baseCurrency.Code,
+                selectedCurrency.Code,
+                discountedBasePrice,
+                ct
+            );
+
+            total += convertedUnitPrice * qty;
 
             reservation.Items.Add(new ReservationItem
             {
@@ -130,9 +153,9 @@ public class ReservationService
         }
 
         if (promoApplied)
-            total *= 0.9m;
+            total *= 0.95m; // 5% popusta za promo kod
 
-        reservation.TotalPrice = total;
+        reservation.TotalPrice = decimal.Round(total, 2, MidpointRounding.AwayFromZero);
 
         reservation.GeneratedPromoCode = new PromoCode
         {
@@ -152,8 +175,7 @@ public class ReservationService
 
         return saved;
     }
-    public Task<Reservation?> GetByIdAsync(int id, CancellationToken ct = default)
-    => _reservations.GetByIdAsync(id, includeItems: true, ct);
+
     public async Task<bool> CancelReservationAsync(int reservationId, CancellationToken ct = default)
     {
         var reservation = await _reservations.GetByIdAsync(reservationId, includeItems: false, ct);
@@ -186,5 +208,16 @@ public class ReservationService
 
         return await _reservations.CancelReservationAsync(reservationId, ct);
     }
+    public async Task<Reservation?> GetByLoginCodeAndEmailAsync(string loginCode, string email, CancellationToken ct = default)
+    {
+        var reservation = await _reservations.GetByLoginCodeAsync(loginCode, includeItems: true, ct);
 
+        if (reservation is null)
+            return null;
+
+        if (!string.Equals(reservation.Email?.Trim(), email?.Trim(), StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        return reservation;
+    }
 }

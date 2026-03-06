@@ -3,6 +3,7 @@ using System;
 using ConcertTickets_API.DataAccess.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ConcertTickets_API.DataAccess.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260306205134_AddReservationEventLog")]
+    partial class AddReservationEventLog
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -209,9 +212,6 @@ namespace ConcertTickets_API.DataAccess.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("ReservationId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TicketCount")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");

@@ -27,14 +27,33 @@ public class ReservationsController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
-    public IActionResult GetById(int id)
-        => Ok(new { note = "Dodaj GetById kad proširimo repo include-items (ako želiš)" });
-
-
+    public async Task<IActionResult> GetById(int id, CancellationToken ct)
+    {
+        var res = await _service.GetByIdAsync(id, ct);
+        return res is null ? NotFound() : Ok(res);
+    }
     [HttpGet("by-code/{loginCode}")]
     public async Task<IActionResult> GetByCode(string loginCode, CancellationToken ct)
     {
         var res = await _service.GetByLoginCodeAsync(loginCode, ct);
         return res is null ? NotFound() : Ok(res);
     }
+    [HttpPatch("{id:int}/cancel")]
+    public async Task<IActionResult> Cancel(int id, CancellationToken ct)
+    {
+        try
+        {
+            var cancelled = await _service.CancelReservationAsync(id, ct);
+            if (!cancelled)
+                return NotFound(new { error = "Rezervacija ne postoji." });
+
+            return Ok(new { message = "Rezervacija je uspješno otkazana." });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+    
+
 }

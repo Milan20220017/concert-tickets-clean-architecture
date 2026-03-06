@@ -152,4 +152,39 @@ public class ReservationService
 
         return saved;
     }
+    public Task<Reservation?> GetByIdAsync(int id, CancellationToken ct = default)
+    => _reservations.GetByIdAsync(id, includeItems: true, ct);
+    public async Task<bool> CancelReservationAsync(int reservationId, CancellationToken ct = default)
+    {
+        var reservation = await _reservations.GetByIdAsync(reservationId, includeItems: false, ct);
+        if (reservation is null)
+            return false;
+
+        if (string.Equals(reservation.Status, "Cancelled", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        var concert = await _concerts.GetByIdAsync(reservation.ConcertId, includeRefs: false, ct);
+        if (concert is null)
+            throw new ArgumentException("Koncert ne postoji.");
+
+        var concertUtc = concert.Date;
+        if (concertUtc.Kind == DateTimeKind.Unspecified)
+            concertUtc = DateTime.SpecifyKind(concertUtc, DateTimeKind.Local).ToUniversalTime();
+        else
+            concertUtc = concertUtc.ToUniversalTime();
+
+        if (DateTime.UtcNow >= concertUtc)
+            throw new ArgumentException("Rezervaciju nije moguće otkazati nakon početka koncerta.");
+
+        var generatedPromo = await _promoCodes.GetByCreatedByReservationIdAsync(reservationId, ct);
+        if (generatedPromo is not null &&
+            string.Equals(generatedPromo.Status, "Active", StringComparison.OrdinalIgnoreCase))
+        {
+            generatedPromo.Status = "Inactive";
+            await _promoCodes.SaveAsync(ct);
+        }
+
+        return await _reservations.CancelReservationAsync(reservationId, ct);
+    }
+
 }

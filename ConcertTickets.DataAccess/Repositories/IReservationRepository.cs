@@ -16,4 +16,8 @@ public interface IReservationRepository
     Task<Reservation?> GetByLoginCodeAsync(string loginCode, bool includeItems = false, CancellationToken ct = default);
 
     Task<int> GetReservedCountAsync(int concertId, int regionSeatingId, CancellationToken ct = default);
+
+    Task<bool> CancelReservationAsync(int id, CancellationToken ct = default);
+
+    Task SaveAsync(CancellationToken ct = default);
 }

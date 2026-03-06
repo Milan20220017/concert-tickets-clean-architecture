@@ -18,6 +18,11 @@ public class PromoCodeRepository : IPromoCodeRepository
     public Task<PromoCode?> GetByIdAsync(int id, CancellationToken ct = default)
         => _db.PromoCodes.FirstOrDefaultAsync(p => p.Id == id, ct);
 
+    public async Task<PromoCode?> GetByCreatedByReservationIdAsync(int reservationId, CancellationToken ct = default)
+    {
+        return await _db.PromoCodes
+            .FirstOrDefaultAsync(p => p.CreatedByReservationId == reservationId, ct);
+    }
     public Task SaveAsync(CancellationToken ct = default)
         => _db.SaveChangesAsync(ct);
 }

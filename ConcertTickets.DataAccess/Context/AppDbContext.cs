@@ -74,21 +74,18 @@ namespace ConcertTickets_API.DataAccess.Context
                 .HasForeignKey(i => i.ReservationId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // UsedPromoCode (Reservation -> PromoCode) 0..1
             modelBuilder.Entity<Reservation>()
                 .HasOne(r => r.UsedPromoCode)
                 .WithMany()
                 .HasForeignKey(r => r.UsedPromoCodeId)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            // PromoCode CreatedBy (PromoCode -> Reservation) 1
             modelBuilder.Entity<PromoCode>()
                 .HasOne(p => p.CreatedByReservation)
                 .WithOne(r => r.GeneratedPromoCode)
                 .HasForeignKey<PromoCode>(p => p.CreatedByReservationId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // PromoCode UsedBy (PromoCode -> Reservation) 0..1
             modelBuilder.Entity<PromoCode>()
                 .HasOne(p => p.UsedByReservation)
                 .WithOne()

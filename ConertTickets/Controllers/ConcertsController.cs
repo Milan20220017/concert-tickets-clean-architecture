@@ -11,10 +11,6 @@ public class ConcertsController : ControllerBase
     private readonly ConcertService _service;
     public ConcertsController(ConcertService service) => _service = service;
 
-    [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] bool includeRefs = false, CancellationToken ct = default)
-        => Ok(await _service.GetAllAsync(includeRefs, ct));
-
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id, [FromQuery] bool includeRefs = false, CancellationToken ct = default)
     {
@@ -41,5 +37,17 @@ public class ConcertsController : ControllerBase
     {
         var ok = await _service.DeleteAsync(id, ct);
         return ok ? NoContent() : NotFound();
+    }
+    [HttpGet]
+    public async Task<IActionResult> GetAll(
+     [FromQuery] bool includeRefs = false,
+     [FromQuery] int? categoryId = null,
+     [FromQuery] int? locationId = null,
+     [FromQuery] DateTime? dateFrom = null,
+     [FromQuery] DateTime? dateTo = null,
+     CancellationToken ct = default)
+    {
+        var concerts = await _service.GetFilteredAsync(includeRefs, categoryId, locationId, dateFrom, dateTo, ct);
+        return Ok(concerts);
     }
 }

@@ -42,8 +42,8 @@ public class ReservationRepository : IReservationRepository
         {
             q = q
               .Include(r => r.Currency)
-              .Include(r => r.Concert).ThenInclude(c => c.Category)
-              .Include(r => r.Concert).ThenInclude(c => c.Location)
+              .Include(r => r.Concert!).ThenInclude(c => c.Category)
+              .Include(r => r.Concert!).ThenInclude(c => c.Location)
               .Include(r => r.Items).ThenInclude(i => i.RegionSeating)
               .Include(r => r.GeneratedPromoCode)
               .Include(r => r.UsedPromoCode);
@@ -53,7 +53,6 @@ public class ReservationRepository : IReservationRepository
     }
     public async Task<int> GetReservedCountAsync(int concertId, int regionSeatingId, CancellationToken ct = default)
     {
-        // saberi sve quantity za taj koncert+region, ignorisi cancelled
         return await _db.ReservationItems
             .Where(i =>
                 i.RegionSeatingId == regionSeatingId &&
@@ -61,4 +60,24 @@ public class ReservationRepository : IReservationRepository
                 i.Reservation.Status != "Cancelled")
             .SumAsync(i => (int?)i.Quantity, ct) ?? 0;
     }
+    public async Task<bool> CancelReservationAsync(int id, CancellationToken ct = default)
+    {
+        var reservation = await _db.Reservations.FirstOrDefaultAsync(r => r.Id == id, ct);
+        if (reservation is null)
+            return false;
+
+        if (string.Equals(reservation.Status, "Cancelled", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        reservation.Status = "Cancelled";
+        await _db.SaveChangesAsync(ct);
+        return true;
+    }
+
+    public async Task SaveAsync(CancellationToken ct = default)
+    {
+        await _db.SaveChangesAsync(ct);
+    }
 }
+   
+

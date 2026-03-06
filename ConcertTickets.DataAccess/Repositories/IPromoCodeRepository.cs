@@ -12,4 +12,5 @@ public interface IPromoCodeRepository
 {
     Task<PromoCode?> GetByIdAsync(int id, CancellationToken ct = default);
     Task SaveAsync(CancellationToken ct = default);
+    Task<PromoCode?> GetByCreatedByReservationIdAsync(int reservationId, CancellationToken ct = default);
 }

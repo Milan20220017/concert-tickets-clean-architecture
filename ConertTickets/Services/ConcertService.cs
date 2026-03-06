@@ -57,4 +57,15 @@ public class ConcertService
 
     public Task<bool> DeleteAsync(int id, CancellationToken ct = default)
         => _concerts.DeleteAsync(id, ct);
+
+    public Task<List<Concert>> GetFilteredAsync(
+     bool includeRefs,
+     int? categoryId,
+     int? locationId,
+     DateTime? dateFrom,
+     DateTime? dateTo,
+     CancellationToken ct = default)
+    {
+        return _concerts.GetFilteredAsync(includeRefs, categoryId, locationId, dateFrom, dateTo, ct);
+    }
 }

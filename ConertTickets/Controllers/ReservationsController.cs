@@ -87,7 +87,7 @@ public class ReservationsController : ControllerBase
             var reservationEvent = new ReservationEventMessage
             {
                 EventType = "ReservationCancelled",
-                ReservationId = reservation.Id,
+                ReservationCode = reservation.LoginCode,
                 ConcertId = reservation.ConcertId,
                 Email = reservation.Email,
                 OccurredAt = DateTime.UtcNow,
@@ -124,7 +124,7 @@ public class ReservationsController : ControllerBase
             var reservationEvent = new ReservationEventMessage
             {
                 EventType = "ReservationCancelled",
-                ReservationId = reservation.Id,
+                ReservationCode = reservation.LoginCode,
                 ConcertId = reservation.ConcertId,
                 Email = reservation.Email,
                 OccurredAt = DateTime.UtcNow,

@@ -22,7 +22,6 @@ namespace ConcertTickets_API.DataAccess.Context
         public DbSet<ReservationItem> ReservationItems => Set<ReservationItem>();
         public DbSet<PromoCode> PromoCodes => Set<PromoCode>();
 
-        public DbSet<ReservationEventLog> ReservationEventLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -98,12 +97,7 @@ namespace ConcertTickets_API.DataAccess.Context
                 .HasIndex(p => p.Code)
                 .IsUnique();
 
-            modelBuilder.Entity<ReservationEventLog>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-                entity.Property(e => e.EventType).IsRequired();
-                entity.Property(e => e.Email).IsRequired();
-            });
+
         }
     }
 }

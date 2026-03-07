@@ -43,11 +43,11 @@ builder.Services.AddScoped<ReservationService>();
 
 builder.Services.AddScoped<IPromoCodeRepository, PromoCodeRepository>();
 
-builder.Services.AddScoped<ReportingService>();
+
 
 // background service
 builder.Services.AddHostedService<BackgroundWorker>();
-builder.Services.AddHostedService<ReservationEventsWorker>();
+
 //spoljni api
 builder.Services.AddHttpClient<ExchangeRateService>();
 var cs = builder.Configuration.GetConnectionString("Default");

@@ -40,32 +40,32 @@ public class ReservationEventsSubscriber : BackgroundService
                 using var scope = _scopeFactory.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<ReportingDbContext>();
 
-                var exists = await db.ReservationEventLogs
-                    .AnyAsync(x =>
-                        x.EventType == evt.EventType &&
-                        x.ReservationId == evt.ReservationId &&
-                        x.OccurredAt == evt.OccurredAt,
-                        stoppingToken);
+                var exists = await db.ReservationEventLogs.AnyAsync(x =>
+                    x.EventType == evt.EventType &&
+                    x.ReservationCode == evt.ReservationCode &&
+                    x.OccurredAt == evt.OccurredAt,
+                    stoppingToken);
 
                 if (exists)
                 {
-                    Console.WriteLine($"A.2 subscriber: duplicate ignored for reservation {evt.ReservationId}");
+                    Console.WriteLine($"A.2 subscriber: duplicate ignored for reservation {evt.ReservationCode}");
                     return;
                 }
 
                 db.ReservationEventLogs.Add(new ReservationEventLog
                 {
                     EventType = evt.EventType,
-                    ReservationId = evt.ReservationId,
+                    ReservationCode = evt.ReservationCode,
                     ConcertId = evt.ConcertId,
                     Email = evt.Email,
+                    LocationId = evt.LocationId,
                     OccurredAt = evt.OccurredAt,
                     TicketCount = evt.TicketCount
                 });
 
                 await db.SaveChangesAsync(stoppingToken);
 
-                Console.WriteLine($"A.2 subscriber saved event: {evt.EventType} / ReservationId={evt.ReservationId}");
+                Console.WriteLine($"A.2 subscriber saved event: {evt.EventType} / ReservationCode={evt.ReservationCode}");
             }
             catch (Exception ex)
             {

@@ -1,7 +1,5 @@
 ﻿using ConcertTickets.Reporting.Models;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Reflection.Emit;
 
 namespace ConcertTickets.Reporting.Data;
 
@@ -19,7 +17,9 @@ public class ReportingDbContext : DbContext
         {
             entity.HasKey(x => x.Id);
             entity.Property(x => x.EventType).IsRequired();
+            entity.Property(x => x.ReservationCode).IsRequired();
             entity.Property(x => x.Email).IsRequired();
+            entity.Property(x => x.OccurredAt).HasColumnType("timestamp with time zone");
         });
     }
 }

@@ -1,7 +1,7 @@
-﻿using ConcertTickets_API.Services;
+﻿using ConcertTickets.Reporting.Services;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ConcertTickets_API.Controllers;
+namespace ConcertTickets.Reporting.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -17,14 +17,14 @@ public class ReportingController : ControllerBase
     [HttpGet("concert-sales")]
     public async Task<IActionResult> GetConcertSales(CancellationToken ct)
     {
-        var data = await _service.GetConcertSalesAsync(ct);
-        return Ok(data);
+        var result = await _service.GetConcertSalesAsync(ct);
+        return Ok(result);
     }
 
     [HttpGet("location-sales")]
     public async Task<IActionResult> GetLocationSales(CancellationToken ct)
     {
-        var data = await _service.GetLocationSalesAsync(ct);
-        return Ok(data);
+        var result = await _service.GetLocationSalesAsync(ct);
+        return Ok(result);
     }
 }

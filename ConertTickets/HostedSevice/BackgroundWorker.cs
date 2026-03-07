@@ -60,10 +60,11 @@ namespace ConcertTickets_API.HostedSevice
                     var reservationEvent = new ReservationEventMessage
                     {
                         EventType = "ReservationCreated",
-                        ReservationId = created.Id,
+                        ReservationCode = created.LoginCode,
                         ConcertId = created.ConcertId,
                         Email = created.Email,
-                        OccurredAt = DateTime.UtcNow
+                        OccurredAt = DateTime.UtcNow,
+                        TicketCount = created.Items.Sum(i => i.Quantity)
                     };
 
                     var eventJson = JsonSerializer.Serialize(reservationEvent);

@@ -2,6 +2,7 @@
 
 public class CreateReservationMessage
 {
+    public string LoginCode { get; set; } = string.Empty;
     public int ConcertId { get; set; }
     public int CurrencyId { get; set; }
     public string Email { get; set; } = string.Empty;

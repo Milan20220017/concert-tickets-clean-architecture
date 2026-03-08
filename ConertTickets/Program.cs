@@ -43,7 +43,7 @@ builder.Services.AddScoped<ReservationService>();
 
 builder.Services.AddScoped<IPromoCodeRepository, PromoCodeRepository>();
 
-
+builder.Services.AddScoped<IReservationRequestStatusRepository, ReservationRequestStatusRepository>();
 
 // background service
 builder.Services.AddHostedService<BackgroundWorker>();
@@ -52,7 +52,16 @@ builder.Services.AddHostedService<BackgroundWorker>();
 builder.Services.AddHttpClient<ExchangeRateService>();
 var cs = builder.Configuration.GetConnectionString("Default");
 builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(cs));
-
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendPolicy", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:3001")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -62,6 +71,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("FrontendPolicy");
 app.UseAuthorization();
 app.MapControllers();
 

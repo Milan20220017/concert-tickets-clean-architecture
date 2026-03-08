@@ -1,5 +1,6 @@
 ﻿using ConcertTickets_API.DataAccess.Repositories;
 using ConcertTickets_API.Domain.Models;
+using ConcertTickets_API.DTO;
 
 namespace ConcertTickets_API.Services;
 
@@ -24,6 +25,39 @@ public class ConcertService
 
     public Task<Concert?> GetByIdAsync(int id, bool includeRefs, CancellationToken ct = default)
         => _concerts.GetByIdAsync(id, includeRefs, ct);
+    public async Task<ConcertListItemDto?> GetListItemByIdAsync(int id, CancellationToken ct = default)
+    {
+        var concert = await _concerts.GetByIdAsync(id, includeRefs: true, ct);
+
+        if (concert is null)
+            return null;
+
+        return MapToListItemDto(concert);
+    }
+    public async Task<List<ConcertListItemDto>> GetAllListItemsAsync(CancellationToken ct = default)
+    {
+        var concerts = await _concerts.GetAllAsync(includeRefs: true, ct);
+
+        return concerts.Select(MapToListItemDto).ToList();
+    }
+
+    public async Task<List<ConcertListItemDto>> GetFilteredListItemsAsync(
+        int? categoryId,
+        int? locationId,
+        DateTime? dateFrom,
+        DateTime? dateTo,
+        CancellationToken ct = default)
+    {
+        var concerts = await _concerts.GetFilteredAsync(
+            includeRefs: true,
+            categoryId,
+            locationId,
+            dateFrom,
+            dateTo,
+            ct);
+
+        return concerts.Select(MapToListItemDto).ToList();
+    }
 
     public async Task<Concert> CreateAsync(string name, DateTime date, int categoryId, int locationId, CancellationToken ct = default)
     {
@@ -31,18 +65,22 @@ public class ConcertService
             date = DateTime.SpecifyKind(date, DateTimeKind.Local).ToUniversalTime();
         else
             date = date.ToUniversalTime();
+
         name = (name ?? "").Trim();
-        if (name.Length < 2) throw new ArgumentException("Naziv koncerta je prekratak.");
 
-        
-        if (date == default) throw new ArgumentException("Datum nije validan.");
+        if (name.Length < 2)
+            throw new ArgumentException("Naziv koncerta je prekratak.");
 
-        
+        if (date == default)
+            throw new ArgumentException("Datum nije validan.");
+
         var cat = await _categories.GetByIdAsync(categoryId, ct);
-        if (cat is null) throw new ArgumentException("Kategorija ne postoji.");
+        if (cat is null)
+            throw new ArgumentException("Kategorija ne postoji.");
 
         var loc = await _locations.GetByIdAsync(locationId, includeRegions: false, ct);
-        if (loc is null) throw new ArgumentException("Lokacija ne postoji.");
+        if (loc is null)
+            throw new ArgumentException("Lokacija ne postoji.");
 
         var concert = new Concert
         {
@@ -59,13 +97,27 @@ public class ConcertService
         => _concerts.DeleteAsync(id, ct);
 
     public Task<List<Concert>> GetFilteredAsync(
-     bool includeRefs,
-     int? categoryId,
-     int? locationId,
-     DateTime? dateFrom,
-     DateTime? dateTo,
-     CancellationToken ct = default)
+        bool includeRefs,
+        int? categoryId,
+        int? locationId,
+        DateTime? dateFrom,
+        DateTime? dateTo,
+        CancellationToken ct = default)
     {
         return _concerts.GetFilteredAsync(includeRefs, categoryId, locationId, dateFrom, dateTo, ct);
+    }
+
+    private static ConcertListItemDto MapToListItemDto(Concert concert)
+    {
+        return new ConcertListItemDto
+        {
+            Id = concert.Id,
+            Name = concert.Name,
+            Date = concert.Date,
+            CategoryId = concert.CategoryId,
+            CategoryName = concert.Category?.Name ?? string.Empty,
+            LocationId = concert.LocationId,
+            LocationName = concert.Location?.Name ?? string.Empty
+        };
     }
 }

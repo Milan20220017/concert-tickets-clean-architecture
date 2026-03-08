@@ -22,6 +22,8 @@ namespace ConcertTickets_API.DataAccess.Context
         public DbSet<ReservationItem> ReservationItems => Set<ReservationItem>();
         public DbSet<PromoCode> PromoCodes => Set<PromoCode>();
 
+        public DbSet<ReservationRequestStatus> ReservationRequestStatuses { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -96,6 +98,22 @@ namespace ConcertTickets_API.DataAccess.Context
             modelBuilder.Entity<PromoCode>()
                 .HasIndex(p => p.Code)
                 .IsUnique();
+
+            modelBuilder.Entity<ReservationRequestStatus>()
+                .HasIndex(x => x.LoginCode)
+                .IsUnique();
+
+            modelBuilder.Entity<ReservationRequestStatus>()
+                .Property(x => x.LoginCode)
+                .IsRequired();
+
+            modelBuilder.Entity<ReservationRequestStatus>()
+                .Property(x => x.Email)
+                .IsRequired();
+
+            modelBuilder.Entity<ReservationRequestStatus>()
+                .Property(x => x.Status)
+                .IsRequired();
 
 
         }

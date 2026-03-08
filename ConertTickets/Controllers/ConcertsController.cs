@@ -12,10 +12,14 @@ public class ConcertsController : ControllerBase
     public ConcertsController(ConcertService service) => _service = service;
 
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id, [FromQuery] bool includeRefs = false, CancellationToken ct = default)
+    public async Task<ActionResult<ConcertListItemDto>> GetById(int id, CancellationToken ct = default)
     {
-        var c = await _service.GetByIdAsync(id, includeRefs, ct);
-        return c is null ? NotFound() : Ok(c);
+        var concert = await _service.GetListItemByIdAsync(id, ct);
+
+        if (concert is null)
+            return NotFound();
+
+        return Ok(concert);
     }
 
     [HttpPost]
@@ -47,7 +51,8 @@ public class ConcertsController : ControllerBase
      [FromQuery] DateTime? dateTo = null,
      CancellationToken ct = default)
     {
-        var concerts = await _service.GetFilteredAsync(includeRefs, categoryId, locationId, dateFrom, dateTo, ct);
+        var concerts = await _service.GetFilteredListItemsAsync(categoryId, locationId, dateFrom, dateTo, ct);
         return Ok(concerts);
     }
+  
 }

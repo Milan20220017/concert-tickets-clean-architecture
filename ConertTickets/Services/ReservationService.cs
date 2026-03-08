@@ -38,12 +38,13 @@ public class ReservationService
         => _reservations.GetByIdAsync(id, includeItems: true, ct);
 
     public async Task<Reservation> CreateAsync(
-        int concertId,
-        int currencyId,
-        string email,
-        int? usedPromoCodeId,
-        List<(int regionId, int qty)> items,
-        CancellationToken ct = default)
+        string loginCode,
+    int concertId,
+    int currencyId,
+    string email,
+    List<(int RegionSeatingId, int Quantity)> items,
+    int? usedPromoCodeId,
+    CancellationToken ct = default)
     {
         email = (email ?? "").Trim();
         if (email.Length < 5)
@@ -107,7 +108,7 @@ public class ReservationService
             CurrencyId = currencyId,
             Email = email,
             CreatedAt = DateTime.UtcNow,
-            LoginCode = Guid.NewGuid().ToString("N")[..8].ToUpperInvariant(),
+            LoginCode = loginCode,
             Status = "Created",
             UsedPromoCodeId = usedPromoCodeId,
             DiscountPercentApplied = earlyBirdActive ? 10m : 0m

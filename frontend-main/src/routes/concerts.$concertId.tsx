@@ -3,8 +3,12 @@ import { useEffect, useState } from 'react'
 import { getConcertById } from '../services/concertService'
 import { getRegionsByLocationId } from '../services/locationService'
 import { createReservation } from '../services/reservationService'
+import { getCurrencies } from '../services/currencyService'
+import type { Currency } from '../services/currencyService'
+import { getTicketPricesByConcert } from '../services/ticketPriceService'
 import type { Concert } from '../types/concert'
 import type { Region } from '../types/region'
+import type { TicketPrice } from '../types/ticketPrice'
 
 export const Route = createFileRoute('/concerts/$concertId')({
   component: ConcertDetailsPage,
@@ -27,17 +31,21 @@ function ConcertDetailsPage() {
 
   const [concert, setConcert] = useState<Concert | null>(null)
   const [regions, setRegions] = useState<Region[]>([])
+  const [currencies, setCurrencies] = useState<Currency[]>([])
+  const [ticketPrices, setTicketPrices] = useState<TicketPrice[]>([])
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   const [email, setEmail] = useState('')
-  const [currencyId, setCurrencyId] = useState('1')
+  const [currencyId, setCurrencyId] = useState('')
   const [regionSeatingId, setRegionSeatingId] = useState('')
   const [quantity, setQuantity] = useState('1')
-  const [usedPromoCodeId, setUsedPromoCodeId] = useState('')
+  const [promoCode, setPromoCode] = useState('')
   const [submitMessage, setSubmitMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
-const [createdLoginCode, setCreatedLoginCode] = useState('')
+  const [createdLoginCode, setCreatedLoginCode] = useState('')
+
   useEffect(() => {
     async function loadData() {
       try {
@@ -50,6 +58,16 @@ const [createdLoginCode, setCreatedLoginCode] = useState('')
 
         const regionData = await getRegionsByLocationId(concertData.locationId)
         setRegions(regionData)
+
+        const currencyData = await getCurrencies()
+        setCurrencies(currencyData)
+
+        if (currencyData.length > 0) {
+          setCurrencyId(String(currencyData[0].id))
+        }
+
+        const pricesData = await getTicketPricesByConcert(Number(concertId))
+        setTicketPrices(pricesData)
       } catch (err) {
         setError('Failed to load concert details.')
         console.error(err)
@@ -61,44 +79,56 @@ const [createdLoginCode, setCreatedLoginCode] = useState('')
     loadData()
   }, [concertId])
 
-async function handleSubmit(e: React.FormEvent) {
-  e.preventDefault()
-
-  if (!concert) return
-
-  const region = regions.find(r => r.id === Number(regionSeatingId))
-
-  if (region && Number(quantity) > region.capacity) {
-    setSubmitMessage(`Maximum tickets for ${region.name} is ${region.capacity}`)
-    return
+  function getPriceForRegion(regionId: number, selectedCurrencyId: number) {
+    return ticketPrices.find(
+      (price) =>
+        price.regionSeatingId === regionId &&
+        price.currencyId === selectedCurrencyId
+    )
   }
 
-  try {
-    setSubmitting(true)
-    setSubmitMessage("")
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
 
-const result = await createReservation({
-  concertId: concert.id,
-  currencyId: Number(currencyId),
-  email,
-  usedPromoCodeId: usedPromoCodeId ? Number(usedPromoCodeId) : undefined,
-  items: [
-    {
-      regionSeatingId: Number(regionSeatingId),
-      quantity: Number(quantity),
-    },
-  ],
-})
+    if (!concert) return
 
-setCreatedLoginCode(result.loginCode)
-setSubmitMessage('Reservation request has been sent. Save your reservation code.')
-  } catch (err) {
-    setSubmitMessage("Failed to submit reservation request.")
-    console.error(err)
-  } finally {
-    setSubmitting(false)
+    const region = regions.find((r) => r.id === Number(regionSeatingId))
+
+    if (region && Number(quantity) > region.capacity) {
+      setSubmitMessage(`Maximum tickets for ${region.name} is ${region.capacity}`)
+      return
+    }
+
+    try {
+      setSubmitting(true)
+      setSubmitMessage('')
+
+      const result = await createReservation({
+        concertId: concert.id,
+        currencyId: Number(currencyId),
+        email,
+        promoCode: promoCode.trim() || undefined,
+        items: [
+          {
+            regionSeatingId: Number(regionSeatingId),
+            quantity: Number(quantity),
+          },
+        ],
+      })
+
+      setCreatedLoginCode(result.loginCode)
+      setSubmitMessage('Reservation request has been sent. Save your reservation code.')
+    } catch (err) {
+      setSubmitMessage('Failed to submit reservation request.')
+      console.error(err)
+    } finally {
+      setSubmitting(false)
+    }
   }
-}
+
+const visiblePrices = ticketPrices.filter(
+  (price) => price.currency?.code?.toUpperCase() === 'EUR'
+)
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-12">
@@ -138,6 +168,35 @@ setSubmitMessage('Reservation request has been sent. Save your reservation code.
           </div>
 
           <div className="rounded-2xl border border-gray-300 bg-white p-8 shadow-sm">
+            <h2 className="mb-6 text-2xl font-bold">Ticket prices</h2>
+ 
+            {visiblePrices.length === 0 ? (
+              <p className="text-gray-600">
+                No ticket prices available for selected currency.
+              </p>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {visiblePrices.map((price) => (
+                  <div key={price.id} className="rounded-xl border p-4">
+                    <p className="mb-1 text-sm text-gray-500">
+                      {price.regionSeating?.name ?? `Region ${price.regionSeatingId}`}
+                    </p>
+                    
+                    <p className="text-lg font-semibold">
+                      {price.amount} {price.currency?.code ?? ''}
+                    </p>
+     
+                  </div>
+                  
+                ))}
+                                                <p className="mb-4 text-sm text-gray-600">
+        Base prices are shown in EUR. Final price will be converted to the selected currency during reservation.
+      </p>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-gray-300 bg-white p-8 shadow-sm">
             <h2 className="mb-6 text-2xl font-bold">Reserve tickets</h2>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -153,15 +212,20 @@ setSubmitMessage('Reservation request has been sent. Save your reservation code.
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium">Currency ID</label>
-                <input
-                  type="number"
+                <label className="mb-1 block text-sm font-medium">Currency</label>
+                <select
                   value={currencyId}
                   onChange={(e) => setCurrencyId(e.target.value)}
                   required
-                  min="1"
                   className="w-full rounded-lg border px-3 py-2"
-                />
+                >
+                  <option value="">Select currency</option>
+                  {currencies.map((currency) => (
+                    <option key={currency.id} value={currency.id}>
+                      {currency.code} - {currency.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -173,11 +237,17 @@ setSubmitMessage('Reservation request has been sent. Save your reservation code.
                   className="w-full rounded-lg border px-3 py-2"
                 >
                   <option value="">Select a region</option>
-                  {regions.map((region) => (
-                    <option key={region.id} value={region.id}>
-                    {region.name} (capacity: {region.capacity})
-                  </option>
-                  ))}
+                  {regions.map((region) => {
+                    const price = getPriceForRegion(region.id, Number(currencyId))
+
+                    return (
+                      <option key={region.id} value={region.id}>
+                        {region.name}
+                        {price ? ` - ${price.amount} ${price.currency?.code ?? ''}` : ''}
+                        {' '} (capacity: {region.capacity})
+                      </option>
+                    )
+                  })}
                 </select>
               </div>
 
@@ -195,16 +265,17 @@ setSubmitMessage('Reservation request has been sent. Save your reservation code.
 
               <div>
                 <label className="mb-1 block text-sm font-medium">
-                  Promo code ID (optional)
+                  Promo code (optional)
                 </label>
                 <input
-                  type="number"
-                  value={usedPromoCodeId}
-                  onChange={(e) => setUsedPromoCodeId(e.target.value)}
+                  type="text"
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
                   className="w-full rounded-lg border px-3 py-2"
+                  placeholder="Enter promo code"
                 />
               </div>
-                    
+
               <button
                 type="submit"
                 disabled={submitting}
@@ -213,15 +284,28 @@ setSubmitMessage('Reservation request has been sent. Save your reservation code.
                 {submitting ? 'Submitting...' : 'Send reservation request'}
               </button>
             </form>
-                {createdLoginCode && (
-  <div className="mt-4 rounded-lg border border-green-300 bg-green-50 p-4">
-    <p className="font-medium">Your reservation code:</p>
-    <p className="mt-1 text-2xl font-bold tracking-wide">{createdLoginCode}</p>
-    <p className="mt-2 text-sm text-gray-700">
-      Save this code and use it later with your email to check reservation status.
-    </p>
-  </div>
-)}
+
+            {createdLoginCode && (
+              <div className="mt-4 rounded-lg border border-green-300 bg-green-50 p-4">
+                <p className="font-medium">Your reservation code:</p>
+
+                <p className="mt-1 text-2xl font-bold tracking-wide">
+                  {createdLoginCode}
+                </p>
+
+                <p className="mt-2 text-sm text-gray-700">
+                  Save this code and use it later with your email to check reservation status.
+                </p>
+
+                <Link
+                  to="/reservation-check"
+                  className="mt-3 inline-block rounded-lg bg-black px-4 py-2 text-white hover:opacity-90"
+                >
+                  Check reservation status
+                </Link>
+              </div>
+            )}
+
             {submitMessage && (
               <p className="mt-4 text-sm text-gray-700">{submitMessage}</p>
             )}

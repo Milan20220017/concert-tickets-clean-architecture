@@ -53,7 +53,7 @@ public class ReservationsController : ControllerBase
                 ConcertId = req.ConcertId,
                 CurrencyId = req.CurrencyId,
                 Email = req.Email,
-                UsedPromoCodeId = req.UsedPromoCodeId,
+                PromoCode = req.PromoCode,
                 Items = req.Items.Select(i => new CreateReservationMessageItem
                 {
                     RegionSeatingId = i.RegionSeatingId,
@@ -194,7 +194,8 @@ public class ReservationsController : ControllerBase
                     ErrorMessage = null,
                     ReservationId = null,
                     TotalPrice = null,
-                    ReservationStatus = null
+                    ReservationStatus = null,
+                    GeneratedPromoCode = null
                 });
             }
 
@@ -208,7 +209,8 @@ public class ReservationsController : ControllerBase
                     ErrorMessage = requestStatus.ErrorMessage,
                     ReservationId = null,
                     TotalPrice = null,
-                    ReservationStatus = null
+                    ReservationStatus = null,
+                    GeneratedPromoCode = null
                 });
             }
 
@@ -224,7 +226,9 @@ public class ReservationsController : ControllerBase
                     ErrorMessage = null,
                     ReservationId = null,
                     TotalPrice = null,
-                    ReservationStatus = null
+                    ReservationStatus = null,
+                    GeneratedPromoCode = null
+
                 });
             }
 
@@ -236,7 +240,8 @@ public class ReservationsController : ControllerBase
                 ErrorMessage = null,
                 ReservationId = reservation.Id,
                 TotalPrice = reservation.TotalPrice,
-                ReservationStatus = reservation.Status
+                ReservationStatus = reservation.Status,
+                GeneratedPromoCode = reservation.GeneratedPromoCode?.Code
             });
         }
         catch (Exception ex)

@@ -46,6 +46,7 @@ function ReservationCheckPage() {
   async function handleCancel() {
     try {
       setCancelMessage('')
+      setError('')
 
       const response = await cancelReservation({
         loginCode,
@@ -54,14 +55,12 @@ function ReservationCheckPage() {
 
       setCancelMessage(response.message)
 
-      setResult((prev) =>
-        prev
-          ? {
-              ...prev,
-              reservationStatus: 'Cancelled',
-            }
-          : prev
-      )
+      const refreshed = await checkReservationStatus({
+        loginCode,
+        email,
+      })
+
+      setResult(refreshed)
     } catch (err) {
       setCancelMessage(
         err instanceof Error ? err.message : 'Failed to cancel reservation.'
@@ -90,6 +89,14 @@ function ReservationCheckPage() {
       return (
         <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">
           Accepted
+        </span>
+      )
+    }
+
+    if (status === 'Cancelled') {
+      return (
+        <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-medium text-red-700">
+          Cancelled
         </span>
       )
     }
@@ -185,12 +192,27 @@ function ReservationCheckPage() {
                 {result.totalPrice ?? '-'}
               </p>
               <p>
+                <span className="font-medium">Request status:</span>{' '}
+                {result.status}
+              </p>
+              <p>
                 <span className="font-medium">Reservation status:</span>{' '}
                 {result.reservationStatus ?? '-'}
               </p>
-
+              {result.generatedPromoCode && (
+                    <div className="mt-4 rounded-lg bg-blue-50 p-4 text-blue-800">
+                      <p className="font-medium">Your promo code for the next reservation:</p>
+                      <p className="mt-2 text-lg font-bold tracking-widest">
+                        {result.generatedPromoCode}
+                      </p>
+                      <p className="mt-1 text-sm">
+                        This code gives a discount on the next reservation and can be used by you or someone else.
+                      </p>
+                    </div>
+                  )}
               {result.reservationStatus !== 'Cancelled' && (
                 <button
+                  type="button"
                   onClick={handleCancel}
                   className="mt-3 rounded-lg bg-red-600 px-5 py-3 text-white hover:opacity-90"
                 >

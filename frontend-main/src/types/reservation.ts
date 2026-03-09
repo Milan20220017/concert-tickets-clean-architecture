@@ -7,6 +7,6 @@ export interface CreateReservationRequest {
   concertId: number
   currencyId: number
   email: string
-  usedPromoCodeId?: number
+  promoCode?: string
   items: CreateReservationItemRequest[]
 }

@@ -5,9 +5,13 @@ export interface CancelReservationRequest {
   email: string
 }
 
+export interface CancelReservationResponse {
+  message: string
+}
+
 export async function cancelReservation(
   payload: CancelReservationRequest
-) {
+): Promise<CancelReservationResponse> {
   const response = await fetch(`${API_BASE_URL}/reservations/cancel-by-code`, {
     method: 'PATCH',
     headers: {
@@ -21,5 +25,5 @@ export async function cancelReservation(
     throw new Error(text || `Request failed with status ${response.status}`)
   }
 
-  return response.json()
+  return response.json() as Promise<CancelReservationResponse>
 }

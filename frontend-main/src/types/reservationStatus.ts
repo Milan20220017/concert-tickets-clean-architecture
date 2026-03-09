@@ -6,4 +6,5 @@ export interface ReservationStatusResponse {
     reservationId: number | null
     totalPrice: number | null   
     reservationStatus: string | null
+    generatedPromoCode: string | null
 }

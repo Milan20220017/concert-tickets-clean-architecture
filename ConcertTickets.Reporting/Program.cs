@@ -19,7 +19,19 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(
 builder.Services.AddScoped<ReportingService>();
 builder.Services.AddHostedService<ReservationEventsSubscriber>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("frontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 var app = builder.Build();
+
+app.UseCors("frontend");
 
 if (app.Environment.IsDevelopment())
 {

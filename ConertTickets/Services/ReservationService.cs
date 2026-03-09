@@ -38,13 +38,13 @@ public class ReservationService
         => _reservations.GetByIdAsync(id, includeItems: true, ct);
 
     public async Task<Reservation> CreateAsync(
-        string loginCode,
-    int concertId,
-    int currencyId,
-    string email,
-    List<(int RegionSeatingId, int Quantity)> items,
-    int? usedPromoCodeId,
-    CancellationToken ct = default)
+     string loginCode,
+     int concertId,
+     int currencyId,
+     string email,
+     List<(int RegionSeatingId, int Quantity)> items,
+     string? promoCode,
+     CancellationToken ct = default)
     {
         email = (email ?? "").Trim();
         if (email.Length < 5)
@@ -52,9 +52,6 @@ public class ReservationService
 
         if (items is null || items.Count == 0)
             throw new ArgumentException("Moraš dodati bar jednu stavku.");
-
-        if (usedPromoCodeId.HasValue && usedPromoCodeId.Value <= 0)
-            usedPromoCodeId = null;
 
         var concert = await _concerts.GetByIdAsync(concertId, includeRefs: false, ct);
         if (concert is null)
@@ -87,9 +84,9 @@ public class ReservationService
         PromoCode? promo = null;
         bool promoApplied = false;
 
-        if (usedPromoCodeId.HasValue)
+        if (!string.IsNullOrWhiteSpace(promoCode))
         {
-            promo = await _promoCodes.GetByIdAsync(usedPromoCodeId.Value, ct);
+            promo = await _promoCodes.GetByCodeAsync(promoCode.Trim().ToUpperInvariant(), ct);
             if (promo is null)
                 throw new ArgumentException("Promo kod ne postoji.");
 
@@ -110,7 +107,7 @@ public class ReservationService
             CreatedAt = DateTime.UtcNow,
             LoginCode = loginCode,
             Status = "Created",
-            UsedPromoCodeId = usedPromoCodeId,
+            UsedPromoCodeId = promo?.Id,
             DiscountPercentApplied = earlyBirdActive ? 10m : 0m
         };
 
@@ -154,7 +151,7 @@ public class ReservationService
         }
 
         if (promoApplied)
-            total *= 0.95m; // 5% popusta za promo kod
+            total *= 0.95m;
 
         reservation.TotalPrice = decimal.Round(total, 2, MidpointRounding.AwayFromZero);
 

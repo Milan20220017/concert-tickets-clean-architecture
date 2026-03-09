@@ -6,7 +6,7 @@ public class CreateReservationRequest
     public int CurrencyId { get; set; }
     public string Email { get; set; } = string.Empty;
 
-    public int? UsedPromoCodeId { get; set; } // opciono
+    public string? PromoCode { get; set; } // opciono
 
     public List<CreateReservationItemRequest> Items { get; set; } = new();
 }

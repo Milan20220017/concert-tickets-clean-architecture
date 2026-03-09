@@ -65,7 +65,7 @@ namespace ConcertTickets_API.HostedSevice
                             dto.CurrencyId,
                             dto.Email,
                             items,
-                            dto.UsedPromoCodeId,
+                            dto.PromoCode,
                             CancellationToken.None
                         );
 

@@ -10,4 +10,5 @@ public class CheckReservationStatusResponse
     public int? ReservationId { get; set; }
     public decimal? TotalPrice { get; set; }
     public string? ReservationStatus { get; set; }
+    public string? GeneratedPromoCode { get; set; }
 }

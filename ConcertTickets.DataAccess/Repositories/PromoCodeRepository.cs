@@ -25,4 +25,10 @@ public class PromoCodeRepository : IPromoCodeRepository
     }
     public Task SaveAsync(CancellationToken ct = default)
         => _db.SaveChangesAsync(ct);
+
+    public async Task<PromoCode?> GetByCodeAsync(string code, CancellationToken ct = default)
+    {
+        return await _db.PromoCodes
+            .FirstOrDefaultAsync(p => p.Code == code, ct);
+    }
 }

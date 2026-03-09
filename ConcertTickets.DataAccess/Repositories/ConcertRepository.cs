@@ -46,36 +46,60 @@ public class ConcertRepository : IConcertRepository
         return true;
     }
     public async Task<List<Concert>> GetFilteredAsync(
-        bool includeRefs,
-        int? categoryId,
-        int? locationId,
-        DateTime? dateFrom,
-        DateTime? dateTo,
-        CancellationToken ct = default)
+    bool includeRefs,
+    int? categoryId,
+    int? locationId,
+    DateTime? dateFrom,
+    DateTime? dateTo,
+    bool onlyPublished = true,
+    CancellationToken ct = default)
     {
-        IQueryable<Concert> q = _db.Concerts;
+        IQueryable<Concert> query = _db.Concerts;
 
         if (includeRefs)
         {
-            q = q
+            query = query
                 .Include(c => c.Category)
                 .Include(c => c.Location);
         }
 
+        if (onlyPublished)
+        {
+            query = query.Where(c => c.isPublished);
+        }
+
         if (categoryId.HasValue)
-            q = q.Where(c => c.CategoryId == categoryId.Value);
+        {
+            query = query.Where(c => c.CategoryId == categoryId.Value);
+        }
 
         if (locationId.HasValue)
-            q = q.Where(c => c.LocationId == locationId.Value);
+        {
+            query = query.Where(c => c.LocationId == locationId.Value);
+        }
 
         if (dateFrom.HasValue)
-            q = q.Where(c => c.Date >= dateFrom.Value);
+        {
+            query = query.Where(c => c.Date >= dateFrom.Value);
+        }
 
         if (dateTo.HasValue)
-            q = q.Where(c => c.Date <= dateTo.Value);
+        {
+            query = query.Where(c => c.Date <= dateTo.Value);
+        }
 
-        return await q
+        return await query
             .OrderBy(c => c.Date)
             .ToListAsync(ct);
+    }
+
+    public async Task SaveAsync(CancellationToken ct = default)
+    {
+        await _db.SaveChangesAsync(ct);
+    }
+
+    public async Task<Concert?> GetByIdForUpdateAsync(int id, CancellationToken ct = default)
+    {
+        return await _db.Concerts.FirstOrDefaultAsync(c => c.Id == id, ct);
     }
 }

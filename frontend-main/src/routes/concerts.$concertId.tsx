@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { getConcertById } from '../services/concertService'
+// import { getConcertById } from '../services/concertService'
 import { getRegionsByLocationId } from '../services/locationService'
 import { createReservation } from '../services/reservationService'
 import { getCurrencies } from '../services/currencyService'
@@ -9,7 +9,11 @@ import { getTicketPricesByConcert } from '../services/ticketPriceService'
 import type { Concert } from '../types/concert'
 import type { Region } from '../types/region'
 import type { TicketPrice } from '../types/ticketPrice'
-
+import type { RegionAvailability } from '#/types/regionAvailability'
+import {
+  getConcertById,
+  getRegionsAvailabilityByConcert,
+} from '../services/concertService'
 export const Route = createFileRoute('/concerts/$concertId')({
   component: ConcertDetailsPage,
 })
@@ -30,7 +34,7 @@ function ConcertDetailsPage() {
   const { concertId } = Route.useParams()
 
   const [concert, setConcert] = useState<Concert | null>(null)
-  const [regions, setRegions] = useState<Region[]>([])
+  const [regions, setRegions] = useState<RegionAvailability[]>([])
   const [currencies, setCurrencies] = useState<Currency[]>([])
   const [ticketPrices, setTicketPrices] = useState<TicketPrice[]>([])
 
@@ -56,8 +60,8 @@ function ConcertDetailsPage() {
         const concertData = await getConcertById(Number(concertId))
         setConcert(concertData)
 
-        const regionData = await getRegionsByLocationId(concertData.locationId)
-        setRegions(regionData)
+      const regionData = await getRegionsAvailabilityByConcert(Number(concertId))
+      setRegions(regionData)
 
         const currencyData = await getCurrencies()
         setCurrencies(currencyData)
@@ -94,10 +98,12 @@ function ConcertDetailsPage() {
 
     const region = regions.find((r) => r.id === Number(regionSeatingId))
 
-    if (region && Number(quantity) > region.capacity) {
-      setSubmitMessage(`Maximum tickets for ${region.name} is ${region.capacity}`)
-      return
-    }
+   if (region && Number(quantity) > region.availableSeats) {
+  setSubmitMessage(
+    `Only ${region.availableSeats} seats are available for ${region.name}.`
+  )
+  return
+}
 
     try {
       setSubmitting(true)
@@ -237,17 +243,17 @@ const visiblePrices = ticketPrices.filter(
                   className="w-full rounded-lg border px-3 py-2"
                 >
                   <option value="">Select a region</option>
-                  {regions.map((region) => {
-                    const price = getPriceForRegion(region.id, Number(currencyId))
+                 {regions.map((region) => {
+  const price = getPriceForRegion(region.id, Number(currencyId))
 
-                    return (
-                      <option key={region.id} value={region.id}>
-                        {region.name}
-                        {price ? ` - ${price.amount} ${price.currency?.code ?? ''}` : ''}
-                        {' '} (capacity: {region.capacity})
-                      </option>
-                    )
-                  })}
+  return (
+    <option key={region.id} value={region.id} disabled={region.availableSeats <= 0}>
+      {region.name}
+      {price ? ` - ${price.amount} ${price.currency?.code ?? ''}` : ''}
+      {` (available: ${region.availableSeats} / ${region.capacity})`}
+    </option>
+  )
+})}
                 </select>
               </div>
 

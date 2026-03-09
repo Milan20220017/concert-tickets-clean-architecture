@@ -15,11 +15,14 @@ public interface IConcertRepository
     Task<Concert> AddAsync(Concert concert, CancellationToken ct = default);
     Task<bool> DeleteAsync(int id, CancellationToken ct = default);
 
+    Task SaveAsync(CancellationToken ct = default);
     Task<List<Concert>> GetFilteredAsync(
     bool includeRefs,
     int? categoryId,
     int? locationId,
     DateTime? dateFrom,
     DateTime? dateTo,
+    bool onlyPublished =true,
     CancellationToken ct = default);
+    Task<Concert?> GetByIdForUpdateAsync(int id, CancellationToken ct = default);
 }

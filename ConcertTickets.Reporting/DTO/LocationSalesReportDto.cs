@@ -6,4 +6,6 @@ public class LocationSalesReportDto
     public int CreatedTickets { get; set; }
     public int CancelledTickets { get; set; }
     public int NetTicketsSold { get; set; }
+
+    public string LocationName { get; set; } = string.Empty;
 }

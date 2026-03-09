@@ -77,8 +77,22 @@ public class ReservationService
         else
             concertUtc = concertUtc.ToUniversalTime();
 
-        var discountUntil = concertUtc.AddDays(-5);
-        bool earlyBirdActive = DateTime.UtcNow <= discountUntil;
+        DateTime? earlyBirdUntilUtc = null;
+
+        if (concert.EarlyBirdDiscountUntil.HasValue)
+        {
+            var earlyBirdValue = concert.EarlyBirdDiscountUntil.Value;
+
+            if (earlyBirdValue.Kind == DateTimeKind.Unspecified)
+                earlyBirdUntilUtc = DateTime.SpecifyKind(earlyBirdValue, DateTimeKind.Local).ToUniversalTime();
+            else
+                earlyBirdUntilUtc = earlyBirdValue.ToUniversalTime();
+        }
+
+        bool earlyBirdActive =
+            earlyBirdUntilUtc.HasValue &&
+            DateTime.UtcNow <= earlyBirdUntilUtc.Value;
+
         decimal earlyBirdMultiplier = earlyBirdActive ? 0.9m : 1m;
 
         PromoCode? promo = null;

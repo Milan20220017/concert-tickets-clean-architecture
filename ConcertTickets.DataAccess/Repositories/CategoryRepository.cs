@@ -28,7 +28,7 @@ public class CategoryRepository : ICategoryRepository
         await _db.SaveChangesAsync(ct);
         return category;
     }
-
+    
     public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
     {
         var entity = await _db.Categories.FirstOrDefaultAsync(c => c.Id == id, ct);

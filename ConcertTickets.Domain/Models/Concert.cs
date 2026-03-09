@@ -19,4 +19,8 @@ public class Concert
 
     public int LocationId { get; set; }
     public Location? Location { get; set; }
+
+    public DateTime? EarlyBirdDiscountUntil { get; set; }
+
+    public bool isPublished { get; set; } = false;
 }

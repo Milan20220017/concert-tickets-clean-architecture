@@ -48,6 +48,11 @@ builder.Services.AddScoped<IReservationRequestStatusRepository, ReservationReque
 // background service
 builder.Services.AddHostedService<BackgroundWorker>();
 
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("Redis");
+    options.InstanceName = "concert-api:";
+});
 //spoljni api
 builder.Services.AddHttpClient<ExchangeRateService>();
 var cs = builder.Configuration.GetConnectionString("Default");
@@ -58,6 +63,7 @@ builder.Services.AddCors(options =>
     {
         policy
             .WithOrigins("http://localhost:3000")
+            .WithOrigins("http://localhost:5173")
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -66,6 +72,7 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
+
     app.UseSwagger();
     app.UseSwaggerUI();
 }

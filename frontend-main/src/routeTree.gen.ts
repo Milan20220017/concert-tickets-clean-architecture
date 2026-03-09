@@ -12,8 +12,15 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ReservationCheckRouteImport } from './routes/reservation-check'
 import { Route as ConcertsRouteImport } from './routes/concerts'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as ReservationLoginCodeRouteImport } from './routes/reservation.$loginCode'
 import { Route as ConcertsConcertIdRouteImport } from './routes/concerts.$concertId'
+import { Route as AdminLocationsRouteImport } from './routes/admin/locations'
+import { Route as AdminCurrenciesRouteImport } from './routes/admin/currencies'
+import { Route as AdminConcertsRouteImport } from './routes/admin/concerts'
+import { Route as AdminCategoriesRouteImport } from './routes/admin/categories'
+import { Route as AdminLocationsLocationIdRegionsRouteImport } from './routes/admin/locations.$locationId.regions'
+import { Route as AdminConcertsConcertIdPricesRouteImport } from './routes/admin/concerts.$concertId.prices'
 
 const ReservationCheckRoute = ReservationCheckRouteImport.update({
   id: '/reservation-check',
@@ -30,6 +37,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReservationLoginCodeRoute = ReservationLoginCodeRouteImport.update({
   id: '/reservation/$loginCode',
   path: '/reservation/$loginCode',
@@ -40,28 +52,81 @@ const ConcertsConcertIdRoute = ConcertsConcertIdRouteImport.update({
   path: '/$concertId',
   getParentRoute: () => ConcertsRoute,
 } as any)
+const AdminLocationsRoute = AdminLocationsRouteImport.update({
+  id: '/admin/locations',
+  path: '/admin/locations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminCurrenciesRoute = AdminCurrenciesRouteImport.update({
+  id: '/admin/currencies',
+  path: '/admin/currencies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminConcertsRoute = AdminConcertsRouteImport.update({
+  id: '/admin/concerts',
+  path: '/admin/concerts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
+  id: '/admin/categories',
+  path: '/admin/categories',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminLocationsLocationIdRegionsRoute =
+  AdminLocationsLocationIdRegionsRouteImport.update({
+    id: '/$locationId/regions',
+    path: '/$locationId/regions',
+    getParentRoute: () => AdminLocationsRoute,
+  } as any)
+const AdminConcertsConcertIdPricesRoute =
+  AdminConcertsConcertIdPricesRouteImport.update({
+    id: '/$concertId/prices',
+    path: '/$concertId/prices',
+    getParentRoute: () => AdminConcertsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/concerts': typeof ConcertsRouteWithChildren
   '/reservation-check': typeof ReservationCheckRoute
+  '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/concerts': typeof AdminConcertsRouteWithChildren
+  '/admin/currencies': typeof AdminCurrenciesRoute
+  '/admin/locations': typeof AdminLocationsRouteWithChildren
   '/concerts/$concertId': typeof ConcertsConcertIdRoute
   '/reservation/$loginCode': typeof ReservationLoginCodeRoute
+  '/admin/': typeof AdminIndexRoute
+  '/admin/concerts/$concertId/prices': typeof AdminConcertsConcertIdPricesRoute
+  '/admin/locations/$locationId/regions': typeof AdminLocationsLocationIdRegionsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/concerts': typeof ConcertsRouteWithChildren
   '/reservation-check': typeof ReservationCheckRoute
+  '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/concerts': typeof AdminConcertsRouteWithChildren
+  '/admin/currencies': typeof AdminCurrenciesRoute
+  '/admin/locations': typeof AdminLocationsRouteWithChildren
   '/concerts/$concertId': typeof ConcertsConcertIdRoute
   '/reservation/$loginCode': typeof ReservationLoginCodeRoute
+  '/admin': typeof AdminIndexRoute
+  '/admin/concerts/$concertId/prices': typeof AdminConcertsConcertIdPricesRoute
+  '/admin/locations/$locationId/regions': typeof AdminLocationsLocationIdRegionsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/concerts': typeof ConcertsRouteWithChildren
   '/reservation-check': typeof ReservationCheckRoute
+  '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/concerts': typeof AdminConcertsRouteWithChildren
+  '/admin/currencies': typeof AdminCurrenciesRoute
+  '/admin/locations': typeof AdminLocationsRouteWithChildren
   '/concerts/$concertId': typeof ConcertsConcertIdRoute
   '/reservation/$loginCode': typeof ReservationLoginCodeRoute
+  '/admin/': typeof AdminIndexRoute
+  '/admin/concerts/$concertId/prices': typeof AdminConcertsConcertIdPricesRoute
+  '/admin/locations/$locationId/regions': typeof AdminLocationsLocationIdRegionsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -69,29 +134,55 @@ export interface FileRouteTypes {
     | '/'
     | '/concerts'
     | '/reservation-check'
+    | '/admin/categories'
+    | '/admin/concerts'
+    | '/admin/currencies'
+    | '/admin/locations'
     | '/concerts/$concertId'
     | '/reservation/$loginCode'
+    | '/admin/'
+    | '/admin/concerts/$concertId/prices'
+    | '/admin/locations/$locationId/regions'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/concerts'
     | '/reservation-check'
+    | '/admin/categories'
+    | '/admin/concerts'
+    | '/admin/currencies'
+    | '/admin/locations'
     | '/concerts/$concertId'
     | '/reservation/$loginCode'
+    | '/admin'
+    | '/admin/concerts/$concertId/prices'
+    | '/admin/locations/$locationId/regions'
   id:
     | '__root__'
     | '/'
     | '/concerts'
     | '/reservation-check'
+    | '/admin/categories'
+    | '/admin/concerts'
+    | '/admin/currencies'
+    | '/admin/locations'
     | '/concerts/$concertId'
     | '/reservation/$loginCode'
+    | '/admin/'
+    | '/admin/concerts/$concertId/prices'
+    | '/admin/locations/$locationId/regions'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ConcertsRoute: typeof ConcertsRouteWithChildren
   ReservationCheckRoute: typeof ReservationCheckRoute
+  AdminCategoriesRoute: typeof AdminCategoriesRoute
+  AdminConcertsRoute: typeof AdminConcertsRouteWithChildren
+  AdminCurrenciesRoute: typeof AdminCurrenciesRoute
+  AdminLocationsRoute: typeof AdminLocationsRouteWithChildren
   ReservationLoginCodeRoute: typeof ReservationLoginCodeRoute
+  AdminIndexRoute: typeof AdminIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -117,6 +208,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reservation/$loginCode': {
       id: '/reservation/$loginCode'
       path: '/reservation/$loginCode'
@@ -130,6 +228,48 @@ declare module '@tanstack/react-router' {
       fullPath: '/concerts/$concertId'
       preLoaderRoute: typeof ConcertsConcertIdRouteImport
       parentRoute: typeof ConcertsRoute
+    }
+    '/admin/locations': {
+      id: '/admin/locations'
+      path: '/admin/locations'
+      fullPath: '/admin/locations'
+      preLoaderRoute: typeof AdminLocationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/currencies': {
+      id: '/admin/currencies'
+      path: '/admin/currencies'
+      fullPath: '/admin/currencies'
+      preLoaderRoute: typeof AdminCurrenciesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/concerts': {
+      id: '/admin/concerts'
+      path: '/admin/concerts'
+      fullPath: '/admin/concerts'
+      preLoaderRoute: typeof AdminConcertsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/categories': {
+      id: '/admin/categories'
+      path: '/admin/categories'
+      fullPath: '/admin/categories'
+      preLoaderRoute: typeof AdminCategoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/locations/$locationId/regions': {
+      id: '/admin/locations/$locationId/regions'
+      path: '/$locationId/regions'
+      fullPath: '/admin/locations/$locationId/regions'
+      preLoaderRoute: typeof AdminLocationsLocationIdRegionsRouteImport
+      parentRoute: typeof AdminLocationsRoute
+    }
+    '/admin/concerts/$concertId/prices': {
+      id: '/admin/concerts/$concertId/prices'
+      path: '/$concertId/prices'
+      fullPath: '/admin/concerts/$concertId/prices'
+      preLoaderRoute: typeof AdminConcertsConcertIdPricesRouteImport
+      parentRoute: typeof AdminConcertsRoute
     }
   }
 }
@@ -146,11 +286,40 @@ const ConcertsRouteWithChildren = ConcertsRoute._addFileChildren(
   ConcertsRouteChildren,
 )
 
+interface AdminConcertsRouteChildren {
+  AdminConcertsConcertIdPricesRoute: typeof AdminConcertsConcertIdPricesRoute
+}
+
+const AdminConcertsRouteChildren: AdminConcertsRouteChildren = {
+  AdminConcertsConcertIdPricesRoute: AdminConcertsConcertIdPricesRoute,
+}
+
+const AdminConcertsRouteWithChildren = AdminConcertsRoute._addFileChildren(
+  AdminConcertsRouteChildren,
+)
+
+interface AdminLocationsRouteChildren {
+  AdminLocationsLocationIdRegionsRoute: typeof AdminLocationsLocationIdRegionsRoute
+}
+
+const AdminLocationsRouteChildren: AdminLocationsRouteChildren = {
+  AdminLocationsLocationIdRegionsRoute: AdminLocationsLocationIdRegionsRoute,
+}
+
+const AdminLocationsRouteWithChildren = AdminLocationsRoute._addFileChildren(
+  AdminLocationsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ConcertsRoute: ConcertsRouteWithChildren,
   ReservationCheckRoute: ReservationCheckRoute,
+  AdminCategoriesRoute: AdminCategoriesRoute,
+  AdminConcertsRoute: AdminConcertsRouteWithChildren,
+  AdminCurrenciesRoute: AdminCurrenciesRoute,
+  AdminLocationsRoute: AdminLocationsRouteWithChildren,
   ReservationLoginCodeRoute: ReservationLoginCodeRoute,
+  AdminIndexRoute: AdminIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

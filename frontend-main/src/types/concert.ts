@@ -6,4 +6,5 @@ export interface Concert {
   categoryName: string
   locationId: number
   locationName: string
+  earlyBirdDiscountUntil?: string | null
 }

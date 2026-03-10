@@ -126,7 +126,7 @@ function AdminConcertsPage() {
       setMessage('Concert deleted successfully.')
       await loadData()
     } catch (err) {
-      setMessage(
+      setError(
         err instanceof Error ? err.message : 'Failed to delete concert.'
       )
     }
@@ -226,7 +226,6 @@ function AdminConcertsPage() {
                   </option>
                 ))}
               </select>
-              
             </div>
 
             <button
@@ -239,19 +238,20 @@ function AdminConcertsPage() {
           </form>
 
           {message && <p className="mt-4 text-sm text-gray-700">{message}</p>}
+          {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
         </div>
 
         <div className="rounded-2xl border border-gray-300 bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-xl font-semibold">Existing concerts</h2>
 
           {loading && <p>Loading concerts...</p>}
-          {error && <p className="text-red-600">{error}</p>}
+          {!loading && error && <p className="text-red-600">{error}</p>}
 
           {!loading && !error && concerts.length === 0 && (
             <p className="text-gray-600">No concerts found.</p>
           )}
 
-          {!loading && !error && concerts.length > 0 && (
+          {!loading && concerts.length > 0 && (
             <div className="space-y-3">
               {concerts.map((concert) => (
                 <div key={concert.id} className="rounded-lg border p-4">
@@ -275,7 +275,7 @@ function AdminConcertsPage() {
 
                     <p className="text-sm text-gray-400">ID: {concert.id}</p>
                   </div>
-                      
+
                   <div className="flex flex-wrap gap-3">
                     <Link
                       to="/admin/concerts/$concertId/prices"
@@ -299,6 +299,7 @@ function AdminConcertsPage() {
           )}
         </div>
       </div>
+
       <Outlet />
     </div>
   )

@@ -14,4 +14,6 @@ public interface ICurrencyRepository
     Task<Currency?> GetByIdAsync(int id, CancellationToken ct = default);
     Task<Currency?> GetByCodeAsync(string code, CancellationToken ct = default);
     Task<Currency> AddAsync(Currency c, CancellationToken ct = default);
+
+    Task<bool> DeleteAsync(int id, CancellationToken ct = default);
 }

@@ -12,4 +12,14 @@ public interface ITicketPriceRepository
 {
     Task<List<TicketPrice>> GetByConcertAsync(int concertId, CancellationToken ct = default);
     Task<TicketPrice> UpsertAsync(TicketPrice price, CancellationToken ct = default);
+
+    Task<bool> ExistsForCurrencyAsync(int currencyId, CancellationToken ct = default);
+
+    Task<bool> ExistsForRegionAsync(int regionSeatingId, CancellationToken ct = default);
+
+    Task<TicketPrice?> GetAsync(
+    int concertId,
+    int regionSeatingId,
+    int currencyId,
+    CancellationToken ct = default);
 }

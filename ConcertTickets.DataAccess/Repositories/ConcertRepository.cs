@@ -102,4 +102,10 @@ public class ConcertRepository : IConcertRepository
     {
         return await _db.Concerts.FirstOrDefaultAsync(c => c.Id == id, ct);
     }
+    public async Task<bool> ExistsForConcertAsync(int concertId, CancellationToken ct = default)
+    {
+        return await _db.Reservations.AnyAsync(r => r.ConcertId == concertId, ct);
+    }
+
+
 }

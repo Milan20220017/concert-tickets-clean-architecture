@@ -29,4 +29,15 @@ public class RegionSeatingRepository : IRegionSeatingRepository
     }
     public Task<RegionSeating?> GetByIdAsync(int id, CancellationToken ct = default)
     => _db.RegionSeatings.AsNoTracking().FirstOrDefaultAsync(r => r.Id == id, ct);
+
+    public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
+    {
+        var entity = await _db.RegionSeatings.FirstOrDefaultAsync(r => r.Id == id, ct);
+        if (entity is null)
+            return false;
+
+        _db.RegionSeatings.Remove(entity);
+        await _db.SaveChangesAsync(ct);
+        return true;
+    }
 }

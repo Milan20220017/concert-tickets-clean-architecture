@@ -55,13 +55,21 @@ function AdminCategoriesPage() {
       setMessage('Category created successfully.')
       await loadCategories()
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Failed to create category.')
+      setMessage(
+        err instanceof Error ? err.message : 'Failed to create category.'
+      )
     } finally {
       setSubmitting(false)
     }
   }
 
   async function handleDelete(id: number) {
+    const confirmed = window.confirm(
+      'Are you sure you want to delete this category?'
+    )
+
+    if (!confirmed) return
+
     try {
       setError('')
       setMessage('')
@@ -70,7 +78,9 @@ function AdminCategoriesPage() {
       setMessage('Category deleted successfully.')
       await loadCategories()
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Failed to delete category.')
+      setError(
+        err instanceof Error ? err.message : 'Failed to delete category.'
+      )
     }
   }
 
@@ -117,19 +127,20 @@ function AdminCategoriesPage() {
           </form>
 
           {message && <p className="mt-4 text-sm text-gray-700">{message}</p>}
+          {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
         </div>
 
         <div className="rounded-2xl border border-gray-300 bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-xl font-semibold">Existing categories</h2>
 
           {loading && <p>Loading categories...</p>}
-          {error && <p className="text-red-600">{error}</p>}
+          {!loading && error && <p className="text-red-600">{error}</p>}
 
           {!loading && !error && categories.length === 0 && (
             <p className="text-gray-600">No categories found.</p>
           )}
 
-          {!loading && !error && categories.length > 0 && (
+          {!loading && categories.length > 0 && (
             <div className="space-y-3">
               {categories.map((category) => (
                 <div

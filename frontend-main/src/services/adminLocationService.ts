@@ -6,11 +6,30 @@ export interface Location {
   address: string
 }
 
+async function getErrorMessage(
+  response: Response,
+  fallback: string
+): Promise<string> {
+  try {
+    const data = await response.json()
+    if (data?.error) return data.error
+    if (data?.message) return data.message
+    return fallback
+  } catch {
+    try {
+      const text = await response.text()
+      return text || fallback
+    } catch {
+      return fallback
+    }
+  }
+}
+
 export async function getLocations(): Promise<Location[]> {
   const response = await fetch(`${API_BASE_URL}/locations`)
 
   if (!response.ok) {
-    throw new Error('Failed to fetch locations')
+    throw new Error(await getErrorMessage(response, 'Failed to fetch locations'))
   }
 
   return response.json()
@@ -29,8 +48,7 @@ export async function createLocation(
   })
 
   if (!response.ok) {
-    const text = await response.text()
-    throw new Error(text || 'Failed to create location')
+    throw new Error(await getErrorMessage(response, 'Failed to create location'))
   }
 
   return response.json()
@@ -42,6 +60,6 @@ export async function deleteLocation(id: number): Promise<void> {
   })
 
   if (!response.ok) {
-    throw new Error('Failed to delete location')
+    throw new Error(await getErrorMessage(response, 'Failed to delete location'))
   }
 }

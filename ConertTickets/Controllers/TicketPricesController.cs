@@ -29,4 +29,5 @@ public class TicketPricesController : ControllerBase
             return BadRequest(new { error = ex.Message });
         }
     }
+
 }

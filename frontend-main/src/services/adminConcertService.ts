@@ -20,11 +20,30 @@ export interface CreateConcertPayload {
   earlyBirdDiscountUntil?: string
 }
 
+async function getErrorMessage(
+  response: Response,
+  fallback: string
+): Promise<string> {
+  try {
+    const data = await response.json()
+    if (data?.error) return data.error
+    if (data?.message) return data.message
+    return fallback
+  } catch {
+    try {
+      const text = await response.text()
+      return text || fallback
+    } catch {
+      return fallback
+    }
+  }
+}
+
 export async function getConcerts(): Promise<Concert[]> {
   const response = await fetch(`${API_BASE_URL}/concerts/admin/all`)
 
   if (!response.ok) {
-    throw new Error('Failed to fetch concerts')
+    throw new Error(await getErrorMessage(response, 'Failed to fetch concerts'))
   }
 
   return response.json()
@@ -42,8 +61,7 @@ export async function createConcert(
   })
 
   if (!response.ok) {
-    const text = await response.text()
-    throw new Error(text || 'Failed to create concert')
+    throw new Error(await getErrorMessage(response, 'Failed to create concert'))
   }
 
   return response.json()
@@ -55,6 +73,6 @@ export async function deleteConcert(id: number): Promise<void> {
   })
 
   if (!response.ok) {
-    throw new Error('Failed to delete concert')
+    throw new Error(await getErrorMessage(response, 'Failed to delete concert'))
   }
 }

@@ -20,4 +20,25 @@ public interface IReservationRepository
     Task<bool> CancelReservationAsync(int id, CancellationToken ct = default);
 
     Task SaveAsync(CancellationToken ct = default);
+
+    Task<int> GetReservedCountExcludingReservationAsync(
+    int concertId,
+    int regionSeatingId,
+    int reservationId,
+    CancellationToken ct = default);
+
+    Task<Reservation?> GetByLoginCodeForUpdateAsync(
+    string loginCode,
+    CancellationToken ct = default);
+
+    Task ReplaceItemsAsync(
+    int reservationId,
+    List<ReservationItem> newItems,
+    CancellationToken ct = default);
+
+    Task<bool> ExistsForCurrencyAsync(int currencyId, CancellationToken ct = default);
+
+    Task<bool> ExistsForRegionAsync(int regionSeatingId, CancellationToken ct = default);
+
+    Task<bool> ExistsForConcertAsync(int concertId, CancellationToken ct = default);
 }

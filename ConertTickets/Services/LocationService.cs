@@ -6,7 +6,10 @@ namespace ConcertTickets_API.Services;
 public class LocationService
 {
     private readonly ILocationRepository _locations;
-    public LocationService(ILocationRepository locations) => _locations = locations;
+    private readonly IConcertRepository _concerts;
+    private readonly IRegionSeatingRepository _regions;
+    public LocationService(ILocationRepository locations, IConcertRepository concerts, IRegionSeatingRepository regions) =>
+        (_locations, _concerts, _regions) = (locations, concerts, regions);
 
     public Task<List<Location>> GetAllAsync(CancellationToken ct = default)
         => _locations.GetAllAsync(ct);
@@ -24,7 +27,26 @@ public class LocationService
 
         return await _locations.AddAsync(new Location { Name = name, Address = address }, ct);
     }
-    public Task<bool> DeleteAsync(int id, CancellationToken ct = default)
-    => _locations.DeleteAsync(id, ct);
+    public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
+    {
+        var concerts = await _concerts.GetFilteredAsync(
+            includeRefs: false,
+            categoryId: null,
+            locationId: id,
+            dateFrom: null,
+            dateTo: null,
+            onlyPublished: false,
+            ct
+        );
+
+        if (concerts.Any())
+            throw new ArgumentException("Lokacija se ne može obrisati jer postoje koncerti zakazani na toj lokaciji.");
+
+        var regions = await _regions.GetByLocationAsync(id, ct);
+        if (regions.Any())
+            throw new ArgumentException("Lokacija se ne može obrisati jer sadrži regione sjedenja.");
+
+        return await _locations.DeleteAsync(id, ct);
+    }
 
 }

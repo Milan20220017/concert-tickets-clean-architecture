@@ -64,7 +64,9 @@ function AdminLocationsPage() {
         params: { locationId: String(created.id) },
       })
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Failed to create location.')
+      setMessage(
+        err instanceof Error ? err.message : 'Failed to create location.'
+      )
     } finally {
       setSubmitting(false)
     }
@@ -85,7 +87,9 @@ function AdminLocationsPage() {
       setMessage('Location deleted successfully.')
       await loadLocations()
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Failed to delete location.')
+      setError(
+        err instanceof Error ? err.message : 'Failed to delete location.'
+      )
     }
   }
 
@@ -145,19 +149,20 @@ function AdminLocationsPage() {
           </form>
 
           {message && <p className="mt-4 text-sm text-gray-700">{message}</p>}
+          {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
         </div>
 
         <div className="rounded-2xl border border-gray-300 bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-xl font-semibold">Existing locations</h2>
 
           {loading && <p>Loading locations...</p>}
-          {error && <p className="text-red-600">{error}</p>}
+          {!loading && error && <p className="text-red-600">{error}</p>}
 
           {!loading && !error && locations.length === 0 && (
             <p className="text-gray-600">No locations found.</p>
           )}
 
-          {!loading && !error && locations.length > 0 && (
+          {!loading && locations.length > 0 && (
             <div className="space-y-3">
               {locations.map((location) => (
                 <div key={location.id} className="rounded-lg border p-4">

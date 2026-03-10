@@ -12,6 +12,7 @@ import type {
 } from '../types/reporting'
 import type { Concert } from '../types/concert'
 import type { Location } from '../types/location'
+
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -21,6 +22,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js'
+
 import { Bar } from 'react-chartjs-2'
 
 ChartJS.register(
@@ -45,33 +47,33 @@ function ReportingPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true)
-        setError('')
-
-        const [concertSalesData, locationSalesData, concertsData, locationsData] =
-          await Promise.all([
-            getConcertSales(),
-            getLocationSales(),
-            getConcerts(),
-            getLocations(),
-          ])
-
-        setConcertSales(concertSalesData)
-        setLocationSales(locationSalesData)
-        setConcerts(concertsData)
-        setLocations(locationsData)
-      } catch (err) {
-        setError('Failed to load reporting data.')
-        console.error(err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
     loadData()
   }, [])
+
+  async function loadData() {
+    try {
+      setLoading(true)
+      setError('')
+
+      const [concertSalesData, locationSalesData, concertsData, locationsData] =
+        await Promise.all([
+          getConcertSales(),
+          getLocationSales(),
+          getConcerts(),
+          getLocations(),
+        ])
+
+      setConcertSales(concertSalesData)
+      setLocationSales(locationSalesData)
+      setConcerts(concertsData)
+      setLocations(locationsData)
+    } catch (err) {
+      setError('Failed to load reporting data.')
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   function getConcertName(concertId: number) {
     return concerts.find((c) => c.id === concertId)?.name ?? `Concert ${concertId}`
@@ -81,44 +83,38 @@ function ReportingPage() {
     return locations.find((l) => l.id === locationId)?.name ?? `Location ${locationId}`
   }
 
-  const totalCreated = concertSales.reduce(
-    (sum, item) => sum + item.createdTickets,
-    0
+  const totalCreated = concertSales.reduce((sum, item) => sum + item.createdTickets, 0)
+
+  const totalCancelled = concertSales.reduce((sum, item) => sum + item.cancelledTickets, 0)
+
+  const totalNetSold = concertSales.reduce((sum, item) => sum + item.netTicketsSold, 0)
+
+  const sortedConcerts = [...concertSales].sort(
+    (a, b) => b.netTicketsSold - a.netTicketsSold
   )
 
-  const totalCancelled = concertSales.reduce(
-    (sum, item) => sum + item.cancelledTickets,
-    0
+  const sortedLocations = [...locationSales].sort(
+    (a, b) => b.netTicketsSold - a.netTicketsSold
   )
 
-  const totalNetSold = concertSales.reduce(
-    (sum, item) => sum + item.netTicketsSold,
-    0
-  )
-const sortedConcerts = [...concertSales].sort(
-  (a, b) => b.netTicketsSold - a.netTicketsSold
-)
-const concertChartData = {
-  
-  labels: sortedConcerts.map((item) => getConcertName(item.concertId)),
-  datasets: [
-    {
-      label: 'Net tickets sold',
-      data: sortedConcerts.map((item) => item.netTicketsSold),
-      
-    },
-    
-  ],
-  
-}
-
-  const locationChartData = {
-    labels: locationSales.map((item) => getLocationName(item.locationId)),
+  const concertChartData = {
+    labels: sortedConcerts.map((item) => getConcertName(item.concertId)),
     datasets: [
       {
-        
-        label: 'Net tickets sold',
-        data: locationSales.map((item) => item.netTicketsSold),
+        label: 'Tickets sold',
+        data: sortedConcerts.map((item) => item.netTicketsSold),
+        backgroundColor: '#2563eb',
+      },
+    ],
+  }
+
+  const locationChartData = {
+    labels: sortedLocations.map((item) => getLocationName(item.locationId)),
+    datasets: [
+      {
+        label: 'Tickets sold',
+        data: sortedLocations.map((item) => item.netTicketsSold),
+        backgroundColor: '#16a34a',
       },
     ],
   }
@@ -126,57 +122,60 @@ const concertChartData = {
   return (
     <div className="min-h-screen bg-slate-100">
       <div className="mx-auto max-w-7xl px-6 py-10">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-slate-900">
-            Reporting dashboard
-          </h1>
-          <p className="mt-2 text-slate-600">
-            Overview of concert and location ticket activity.
-          </p>
+
+        <div className="flex items-center justify-between mb-10">
+          <div>
+            <h1 className="text-4xl font-bold text-slate-900">
+              Reporting dashboard
+            </h1>
+            <p className="text-slate-600 mt-2">
+              Overview of concert ticket activity.
+            </p>
+          </div>
+
+          <button
+            onClick={loadData}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+          >
+            Refresh data
+          </button>
         </div>
 
-        {loading && <p className="text-slate-700">Loading reporting data...</p>}
+        {loading && <p>Loading reporting data...</p>}
         {error && <p className="text-red-600">{error}</p>}
 
         {!loading && !error && (
-          <div className="space-y-8">
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <p className="text-sm text-slate-500">Total created tickets</p>
-                <p className="mt-2 text-3xl font-bold text-slate-900">
-                  {totalCreated}
-                </p>
+          <>
+            <div className="grid gap-6 md:grid-cols-3 mb-10">
+
+              <div className="rounded-xl bg-white p-6 shadow">
+                <p className="text-sm text-gray-500">Total created tickets</p>
+                <p className="text-3xl font-bold mt-2">{totalCreated}</p>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <p className="text-sm text-slate-500">
-                  Total cancelled tickets
-                </p>
-                <p className="mt-2 text-3xl font-bold text-red-600">
+              <div className="rounded-xl bg-white p-6 shadow">
+                <p className="text-sm text-gray-500">Total cancelled</p>
+                <p className="text-3xl font-bold text-red-600 mt-2">
                   {totalCancelled}
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <p className="text-sm text-slate-500">Total net sold</p>
-                <p className="mt-2 text-3xl font-bold text-green-600">
+              <div className="rounded-xl bg-white p-6 shadow">
+                <p className="text-sm text-gray-500">Net sold</p>
+                <p className="text-3xl font-bold text-green-600 mt-2">
                   {totalNetSold}
                 </p>
               </div>
-              <button
-                            onClick={() => window.location.reload()}
-                            className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-                          >
-                            Refresh data
-                          </button>
+
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-2">
-              
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 className="mb-4 text-xl font-semibold text-slate-900">
-                  Concert sales chart
+            <div className="grid gap-8 lg:grid-cols-2 mb-10">
+
+              <div className="rounded-xl bg-white p-6 shadow">
+                <h2 className="font-semibold text-lg mb-4">
+                  Concert sales
                 </h2>
+
                 <div className="h-80">
                   <Bar
                     data={concertChartData}
@@ -184,23 +183,23 @@ const concertChartData = {
                       responsive: true,
                       maintainAspectRatio: false,
                       plugins: {
+                        legend: { display: false },
                         tooltip: {
                           callbacks: {
-                            label: function(context) {
-                              return `Tickets sold: ${context.raw}`
-                            }
-                          }
-                        }
-                      }
+                            label: (ctx) => `Tickets sold: ${ctx.raw}`,
+                          },
+                        },
+                      },
                     }}
                   />
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 className="mb-4 text-xl font-semibold text-slate-900">
-                  Location sales chart
+              <div className="rounded-xl bg-white p-6 shadow">
+                <h2 className="font-semibold text-lg mb-4">
+                  Location sales
                 </h2>
+
                 <div className="h-80">
                   <Bar
                     data={locationChartData}
@@ -208,92 +207,85 @@ const concertChartData = {
                       responsive: true,
                       maintainAspectRatio: false,
                       plugins: {
+                        legend: { display: false },
                         tooltip: {
                           callbacks: {
-                            label: function(context) {
-                              return `Tickets sold: ${context.raw}`
-                            }
-                          }
-                        }
-                      }
+                            label: (ctx) => `Tickets sold: ${ctx.raw}`,
+                          },
+                        },
+                      },
                     }}
                   />
                 </div>
               </div>
+
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="mb-4 text-xl font-semibold text-slate-900">
+            <div className="rounded-xl bg-white p-6 shadow mb-10">
+              <h2 className="font-semibold text-lg mb-4">
                 Sales by concert
               </h2>
 
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-200 bg-slate-50 text-left text-slate-700">
-                      <th className="px-4 py-3">Concert</th>
-                      <th className="px-4 py-3">Created</th>
-                      <th className="px-4 py-3">Cancelled</th>
-                      <th className="px-4 py-3">Net sold</th>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left text-gray-600">
+                    <th className="py-2">Concert</th>
+                    <th>Created</th>
+                    <th>Cancelled</th>
+                    <th>Net sold</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {sortedConcerts.map((item) => (
+                    <tr key={item.concertId} className="border-b">
+                      <td className="py-2">
+                        {getConcertName(item.concertId)}
+                      </td>
+                      <td>{item.createdTickets}</td>
+                      <td>{item.cancelledTickets}</td>
+                      <td className="font-semibold">
+                        {item.netTicketsSold}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {concertSales.map((item) => (
-                      <tr
-                        key={item.concertId}
-                        className="border-b border-slate-100 text-slate-800"
-                      >
-                        <td className="px-4 py-3">
-                          {getConcertName(item.concertId)}
-                        </td>
-                        <td className="px-4 py-3">{item.createdTickets}</td>
-                        <td className="px-4 py-3">{item.cancelledTickets}</td>
-                        <td className="px-4 py-3 font-semibold">
-                          {item.netTicketsSold}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="mb-4 text-xl font-semibold text-slate-900">
+            <div className="rounded-xl bg-white p-6 shadow">
+              <h2 className="font-semibold text-lg mb-4">
                 Sales by location
               </h2>
 
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-200 bg-slate-50 text-left text-slate-700">
-                      <th className="px-4 py-3">Location</th>
-                      <th className="px-4 py-3">Created</th>
-                      <th className="px-4 py-3">Cancelled</th>
-                      <th className="px-4 py-3">Net sold</th>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left text-gray-600">
+                    <th className="py-2">Location</th>
+                    <th>Created</th>
+                    <th>Cancelled</th>
+                    <th>Net sold</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {sortedLocations.map((item) => (
+                    <tr key={item.locationId} className="border-b">
+                      <td className="py-2">
+                        {getLocationName(item.locationId)}
+                      </td>
+                      <td>{item.createdTickets}</td>
+                      <td>{item.cancelledTickets}</td>
+                      <td className="font-semibold">
+                        {item.netTicketsSold}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {locationSales.map((item) => (
-                      <tr
-                        key={item.locationId}
-                        className="border-b border-slate-100 text-slate-800"
-                      >
-                        <td className="px-4 py-3">
-                          {getLocationName(item.locationId)}
-                        </td>
-                        <td className="px-4 py-3">{item.createdTickets}</td>
-                        <td className="px-4 py-3">{item.cancelledTickets}</td>
-                        <td className="px-4 py-3 font-semibold">
-                          {item.netTicketsSold}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </div>
+
+          </>
         )}
       </div>
     </div>

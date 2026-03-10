@@ -25,4 +25,6 @@ public interface IConcertRepository
     bool onlyPublished =true,
     CancellationToken ct = default);
     Task<Concert?> GetByIdForUpdateAsync(int id, CancellationToken ct = default);
+
+    Task<bool> ExistsForConcertAsync(int concertId, CancellationToken ct = default);
 }

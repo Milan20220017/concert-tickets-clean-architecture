@@ -5,11 +5,30 @@ export interface Category {
   name: string
 }
 
+async function getErrorMessage(
+  response: Response,
+  fallback: string
+): Promise<string> {
+  try {
+    const data = await response.json()
+    if (data?.error) return data.error
+    if (data?.message) return data.message
+    return fallback
+  } catch {
+    try {
+      const text = await response.text()
+      return text || fallback
+    } catch {
+      return fallback
+    }
+  }
+}
+
 export async function getCategories(): Promise<Category[]> {
   const response = await fetch(`${API_BASE_URL}/categories`)
 
   if (!response.ok) {
-    throw new Error('Failed to fetch categories')
+    throw new Error(await getErrorMessage(response, 'Failed to fetch categories'))
   }
 
   return response.json()
@@ -25,8 +44,7 @@ export async function createCategory(name: string): Promise<Category> {
   })
 
   if (!response.ok) {
-    const text = await response.text()
-    throw new Error(text || 'Failed to create category')
+    throw new Error(await getErrorMessage(response, 'Failed to create category'))
   }
 
   return response.json()
@@ -38,6 +56,6 @@ export async function deleteCategory(id: number): Promise<void> {
   })
 
   if (!response.ok) {
-    throw new Error('Failed to delete category')
+    throw new Error(await getErrorMessage(response, 'Failed to delete category'))
   }
 }

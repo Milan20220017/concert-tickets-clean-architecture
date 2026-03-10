@@ -15,6 +15,7 @@ public class ConcertService
     private readonly ICategoryRepository _categories;
     private readonly IRegionSeatingRepository _regionSeating;
     private readonly IDistributedCache _cache;
+    private readonly ITicketPriceRepository _prices;
 
     public ConcertService(
         IReservationRepository reservations,
@@ -22,7 +23,8 @@ public class ConcertService
         ICategoryRepository categories,
         ILocationRepository locations,
         IRegionSeatingRepository regions,
-        IDistributedCache cache)
+        IDistributedCache cache,
+        ITicketPriceRepository prices)
     {
         _reservations = reservations;
         _concerts = concerts;
@@ -30,6 +32,7 @@ public class ConcertService
         _locations = locations;
         _regionSeating = regions;
         _cache = cache;
+        _prices = prices;
     }
 
     public Task<List<Concert>> GetAllAsync(bool includeRefs, CancellationToken ct = default)
@@ -130,12 +133,15 @@ public class ConcertService
 
     public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
     {
-        var deleted = await _concerts.DeleteAsync(id, ct);
+        var prices = await _prices.GetByConcertAsync(id, ct);
+        if (prices.Any())
+            throw new ArgumentException("Koncert se ne može obrisati jer ima definisane cijene karata.");
 
-        if (deleted)
-            await _cache.RemoveAsync("home_published_concerts", ct);
+        var hasReservations = await _reservations.ExistsForConcertAsync(id, ct);
+        if (hasReservations)
+            throw new ArgumentException("Koncert se ne može obrisati jer postoje rezervacije za taj koncert.");
 
-        return deleted;
+        return await _concerts.DeleteAsync(id, ct);
     }
 
     //public Task<List<Concert>> GetFilteredAsync(
@@ -233,8 +239,8 @@ public class ConcertService
         return result;
     }
     public async Task<List<RegionAvailabilityDto>> GetRegionAvailabilityAsync(
-    int concertId,
-    CancellationToken ct = default)
+        int concertId,
+        CancellationToken ct = default)
     {
         var concert = await _concerts.GetByIdAsync(concertId, includeRefs: false, ct);
         if (concert is null)
@@ -246,7 +252,12 @@ public class ConcertService
 
         foreach (var region in regions)
         {
-            var reservedSeats = await _reservations.GetReservedCountAsync(concertId, region.Id, ct);
+            var reservedSeats = await _reservations.GetReservedCountAsync(
+                concertId,
+                region.Id,
+                ct
+            );
+
             var availableSeats = Math.Max(region.Capacity - reservedSeats, 0);
 
             result.Add(new RegionAvailabilityDto
@@ -261,4 +272,7 @@ public class ConcertService
 
         return result;
     }
+
+
+
 }

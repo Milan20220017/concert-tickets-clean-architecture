@@ -42,6 +42,7 @@ builder.Services.AddScoped<IReservationRepository, ReservationRepository>();
 builder.Services.AddScoped<ReservationService>();
 
 builder.Services.AddScoped<IPromoCodeRepository, PromoCodeRepository>();
+builder.Services.AddScoped<PromoCodeService>();
 
 builder.Services.AddScoped<IReservationRequestStatusRepository, ReservationRequestStatusRepository>();
 
@@ -54,6 +55,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
     options.InstanceName = "concert-api:";
 });
 //spoljni api
+
 builder.Services.AddHttpClient<ExchangeRateService>();
 var cs = builder.Configuration.GetConnectionString("Default");
 builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(cs));

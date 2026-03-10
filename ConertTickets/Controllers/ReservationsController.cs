@@ -1,10 +1,11 @@
 ﻿using ConcertTickets_API.DataAccess.Repositories;
+using ConcertTickets_API.Domain.Models;
 using ConcertTickets_API.DTO;
 using ConcertTickets_API.Services;
 using Microsoft.AspNetCore.Mvc;
 using StackExchange.Redis;
 using System.Text.Json;
-using ConcertTickets_API.Domain.Models;
+
 namespace ConcertTickets_API.Controllers;
 
 [ApiController]
@@ -14,13 +15,22 @@ public class ReservationsController : ControllerBase
     private readonly ReservationService _service;
     private readonly IConnectionMultiplexer _redis;
     private readonly IReservationRequestStatusRepository _requestStatuses;
+    private readonly IConcertRepository _concerts;
+    private readonly ITicketPriceRepository _prices;
 
 
-    public ReservationsController(ReservationService service, IConnectionMultiplexer redis, IReservationRequestStatusRepository requestStatuses)
+    public ReservationsController(
+        ReservationService service,
+        IConnectionMultiplexer redis,
+        IReservationRequestStatusRepository requestStatuses,
+        IConcertRepository concerts,
+        ITicketPriceRepository prices)
     {
         _service = service;
         _redis = redis;
         _requestStatuses = requestStatuses;
+        _concerts = concerts;
+        _prices = prices;
     }
 
     [HttpPost]
@@ -71,7 +81,7 @@ public class ReservationsController : ControllerBase
             return Accepted(new
             {
                 message = "Zahtjev za rezervaciju je primljen i poslat na obradu.",
-                loginCode = loginCode
+                loginCode
             });
         }
         catch (Exception ex)
@@ -99,6 +109,8 @@ public class ReservationsController : ControllerBase
     {
         try
         {
+
+
             var reservation = await _service.GetByIdAsync(id, ct);
             if (reservation is null)
                 return NotFound(new { error = "Rezervacija ne postoji." });
@@ -106,6 +118,8 @@ public class ReservationsController : ControllerBase
             var cancelled = await _service.CancelReservationAsync(id, ct);
             if (!cancelled)
                 return NotFound(new { error = "Rezervacija ne postoji." });
+            var concert = await _concerts.GetByIdAsync(reservation.ConcertId, false, ct);
+
 
             var publisher = _redis.GetSubscriber();
 
@@ -116,12 +130,18 @@ public class ReservationsController : ControllerBase
                 ConcertId = reservation.ConcertId,
                 Email = reservation.Email,
                 OccurredAt = DateTime.UtcNow,
-                TicketCount = reservation.Items.Sum(i => i.Quantity)
+                TicketCount = reservation.Items.Sum(i => i.Quantity),
+                LocationId = concert!.LocationId
+
+
             };
 
             var eventJson = JsonSerializer.Serialize(reservationEvent);
 
-            await publisher.PublishAsync(new RedisChannel("reservation_events", RedisChannel.PatternMode.Literal), eventJson);
+            await publisher.PublishAsync(
+                RedisChannel.Literal("reservation_events"),
+                eventJson
+            );
 
             return Ok(new { message = "Rezervacija je uspješno otkazana." });
         }
@@ -130,6 +150,7 @@ public class ReservationsController : ControllerBase
             return BadRequest(new { error = ex.Message });
         }
     }
+
     [HttpPatch("cancel-by-code")]
     public async Task<IActionResult> CancelByCode([FromBody] CancelReservationByCodeRequest req, CancellationToken ct)
     {
@@ -143,6 +164,9 @@ public class ReservationsController : ControllerBase
             if (!cancelled)
                 return NotFound(new { error = "Rezervacija ne postoji." });
 
+            var concert = await _concerts.GetByIdAsync(reservation.ConcertId, false, ct);
+
+
             var publisher = _redis.GetSubscriber();
 
             var reservationEvent = new ReservationEventMessage
@@ -152,11 +176,16 @@ public class ReservationsController : ControllerBase
                 ConcertId = reservation.ConcertId,
                 Email = reservation.Email,
                 OccurredAt = DateTime.UtcNow,
-                TicketCount = reservation.Items.Sum(i => i.Quantity)
+                TicketCount = reservation.Items.Sum(i => i.Quantity),
+                LocationId = concert!.LocationId
             };
 
             var eventJson = JsonSerializer.Serialize(reservationEvent);
-            await publisher.PublishAsync(RedisChannel.Literal("reservation_events"), eventJson);
+
+            await publisher.PublishAsync(
+                RedisChannel.Literal("reservation_events"),
+                eventJson
+            );
 
             return Ok(new { message = "Rezervacija je uspješno otkazana." });
         }
@@ -168,20 +197,23 @@ public class ReservationsController : ControllerBase
 
     [HttpPost("check-status")]
     public async Task<ActionResult<CheckReservationStatusResponse>> CheckStatus(
-       [FromBody] CheckReservationStatusRequest req,
-       CancellationToken ct)
+        [FromBody] CheckReservationStatusRequest req,
+        CancellationToken ct)
     {
         try
         {
             if (string.IsNullOrWhiteSpace(req.LoginCode) || string.IsNullOrWhiteSpace(req.Email))
                 return BadRequest(new { error = "Login code i email su obavezni." });
 
-            var requestStatus = await _requestStatuses.GetByLoginCodeAsync(req.LoginCode.Trim().ToUpperInvariant(), ct);
+            var normalizedLoginCode = req.LoginCode.Trim().ToUpperInvariant();
+            var normalizedEmail = req.Email.Trim();
+
+            var requestStatus = await _requestStatuses.GetByLoginCodeAsync(normalizedLoginCode, ct);
 
             if (requestStatus is null)
                 return NotFound(new { error = "Zahtjev za rezervaciju nije pronađen." });
 
-            if (!string.Equals(requestStatus.Email?.Trim(), req.Email?.Trim(), StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(requestStatus.Email?.Trim(), normalizedEmail, StringComparison.OrdinalIgnoreCase))
                 return NotFound(new { error = "Zahtjev za rezervaciju nije pronađen." });
 
             if (string.Equals(requestStatus.Status, "Pending", StringComparison.OrdinalIgnoreCase))
@@ -195,7 +227,13 @@ public class ReservationsController : ControllerBase
                     ReservationId = null,
                     TotalPrice = null,
                     ReservationStatus = null,
-                    GeneratedPromoCode = null
+                    GeneratedPromoCode = null,
+                    Items = new List<ReservationStatusItemDto>(),
+                    SubtotalBeforeDiscounts = null,
+                    EarlyBirdDiscountAmount = null,
+                    PromoDiscountAmount = null,
+                    FinalTotalPrice = null,
+                    PriceBreakdown = new List<ReservationPriceBreakdownItemDto>()
                 });
             }
 
@@ -210,11 +248,21 @@ public class ReservationsController : ControllerBase
                     ReservationId = null,
                     TotalPrice = null,
                     ReservationStatus = null,
-                    GeneratedPromoCode = null
+                    GeneratedPromoCode = null,
+                    Items = new List<ReservationStatusItemDto>(),
+                    SubtotalBeforeDiscounts = null,
+                    EarlyBirdDiscountAmount = null,
+                    PromoDiscountAmount = null,
+                    FinalTotalPrice = null,
+                    PriceBreakdown = new List<ReservationPriceBreakdownItemDto>()
                 });
             }
 
-            var reservation = await _service.GetByLoginCodeAndEmailAsync(requestStatus.LoginCode, requestStatus.Email, ct);
+            var reservation = await _service.GetByLoginCodeAndEmailAsync(
+                requestStatus.LoginCode,
+                requestStatus.Email,
+                ct
+            );
 
             if (reservation is null)
             {
@@ -227,10 +275,17 @@ public class ReservationsController : ControllerBase
                     ReservationId = null,
                     TotalPrice = null,
                     ReservationStatus = null,
-                    GeneratedPromoCode = null
-
+                    GeneratedPromoCode = null,
+                    Items = new List<ReservationStatusItemDto>(),
+                    SubtotalBeforeDiscounts = null,
+                    EarlyBirdDiscountAmount = null,
+                    PromoDiscountAmount = null,
+                    FinalTotalPrice = null,
+                    PriceBreakdown = new List<ReservationPriceBreakdownItemDto>()
                 });
             }
+
+            var breakdown = await _service.BuildReservationBreakdownAsync(reservation, ct);
 
             return Ok(new CheckReservationStatusResponse
             {
@@ -241,12 +296,58 @@ public class ReservationsController : ControllerBase
                 ReservationId = reservation.Id,
                 TotalPrice = reservation.TotalPrice,
                 ReservationStatus = reservation.Status,
-                GeneratedPromoCode = reservation.GeneratedPromoCode?.Code
+                GeneratedPromoCode = reservation.GeneratedPromoCode?.Code,
+                Items = reservation.Items.Select(i => new ReservationStatusItemDto
+                {
+                    RegionSeatingId = i.RegionSeatingId,
+                    RegionName = i.RegionSeating?.Name ?? $"Region {i.RegionSeatingId}",
+                    Quantity = i.Quantity
+                }).ToList(),
+
+                SubtotalBeforeDiscounts = breakdown.SubtotalBeforeDiscounts,
+                EarlyBirdDiscountAmount = breakdown.EarlyBirdDiscountAmount,
+                PromoDiscountAmount = breakdown.PromoDiscountAmount,
+                FinalTotalPrice = breakdown.FinalTotalPrice,
+                PriceBreakdown = breakdown.PriceBreakdown
             });
         }
         catch (Exception ex)
         {
             return BadRequest(new { error = ex.Message });
         }
+    }
+
+    [HttpPatch("update-by-code")]
+    public async Task<IActionResult> UpdateByCode([FromBody] UpdateReservationRequest req, CancellationToken ct)
+    {
+        try
+        {
+            var updated = await _service.UpdateReservationByCodeAsync(
+                req.LoginCode,
+                req.Email,
+                req.Items.Select(i => (i.RegionSeatingId, i.Quantity)).ToList(),
+                ct
+            );
+
+            return Ok(new
+            {
+                message = "Rezervacija je uspješno izmijenjena.",
+                reservationId = updated.Id,
+                totalPrice = updated.TotalPrice,
+                status = updated.Status
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+    [HttpPost("calculate")]
+    public async Task<IActionResult> Calculate(
+     [FromBody] CalculateReservationRequest request,
+     CancellationToken ct)
+    {
+        var result = await _service.CalculateAsync(request, ct);
+        return Ok(result);
     }
 }

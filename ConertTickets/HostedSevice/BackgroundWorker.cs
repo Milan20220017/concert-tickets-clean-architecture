@@ -46,6 +46,7 @@ namespace ConcertTickets_API.HostedSevice
 
                         var reservationService = scope.ServiceProvider.GetRequiredService<ReservationService>();
                         var requestStatusRepository = scope.ServiceProvider.GetRequiredService<IReservationRequestStatusRepository>();
+                        var concertRepository = scope.ServiceProvider.GetRequiredService<IConcertRepository>();
 
                         var requestStatus = await requestStatusRepository.GetByLoginCodeAsync(dto.LoginCode, CancellationToken.None);
 
@@ -77,6 +78,13 @@ namespace ConcertTickets_API.HostedSevice
 
                         Console.WriteLine($"Reservation created successfully. Id = {created.Id}");
 
+                        var concert = await concertRepository.GetByIdAsync(created.ConcertId, false, CancellationToken.None);
+
+                        if (concert is null)
+                        {
+                            throw new Exception($"Concert with id {created.ConcertId} was not found.");
+                        }
+
                         var eventPublisher = _redis.GetSubscriber();
 
                         var reservationEvent = new ReservationEventMessage
@@ -86,7 +94,8 @@ namespace ConcertTickets_API.HostedSevice
                             ConcertId = created.ConcertId,
                             Email = created.Email,
                             OccurredAt = DateTime.UtcNow,
-                            TicketCount = created.Items.Sum(i => i.Quantity)
+                            TicketCount = created.Items.Sum(i => i.Quantity),
+                            LocationId = concert.LocationId
                         };
 
                         var eventJson = JsonSerializer.Serialize(reservationEvent);

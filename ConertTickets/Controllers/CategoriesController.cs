@@ -40,7 +40,14 @@ public class CategoriesController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
-        var ok = await _service.DeleteAsync(id, ct);
-        return ok ? NoContent() : NotFound();
+        try
+        {
+            var ok = await _service.DeleteAsync(id, ct);
+            return ok ? NoContent() : NotFound();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 }

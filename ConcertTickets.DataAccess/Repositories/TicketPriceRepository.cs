@@ -42,4 +42,30 @@ public class TicketPriceRepository : ITicketPriceRepository
         await _db.SaveChangesAsync(ct);
         return existing ?? price;
     }
+
+    public async Task<bool> ExistsForCurrencyAsync(int currencyId, CancellationToken ct = default)
+    {
+        return await _db.TicketPrices.AnyAsync(tp => tp.CurrencyId == currencyId, ct);
+    }
+
+    public async Task<bool> ExistsForRegionAsync(int regionSeatingId, CancellationToken ct = default)
+    {
+        return await _db.TicketPrices.AnyAsync(tp => tp.RegionSeatingId == regionSeatingId, ct);
+    }
+
+    public async Task<TicketPrice?> GetAsync(
+    int concertId,
+    int regionSeatingId,
+    int currencyId,
+    CancellationToken ct = default)
+    {
+        return await _db.TicketPrices
+            .Include(p => p.RegionSeating)
+            .Include(p => p.Currency)
+            .FirstOrDefaultAsync(p =>
+                p.ConcertId == concertId &&
+                p.RegionSeatingId == regionSeatingId &&
+                p.CurrencyId == currencyId,
+                ct);
+    }
 }

@@ -12,6 +12,6 @@ public interface IRegionSeatingRepository
 {
     Task<List<RegionSeating>> GetByLocationAsync(int locationId, CancellationToken ct = default);
     Task<RegionSeating> AddAsync(RegionSeating region, CancellationToken ct = default);
-
     Task<RegionSeating?> GetByIdAsync(int id, CancellationToken ct = default);
+    Task<bool> DeleteAsync(int id, CancellationToken ct = default);
 }

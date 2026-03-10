@@ -30,4 +30,15 @@ public class CurrencyRepository : ICurrencyRepository
         await _db.SaveChangesAsync(ct);
         return c;
     }
+
+    public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
+    {
+        var entity = await _db.Currencies.FirstOrDefaultAsync(c => c.Id == id, ct);
+        if (entity is null)
+            return false;
+
+        _db.Currencies.Remove(entity);
+        await _db.SaveChangesAsync(ct);
+        return true;
+    }
 }

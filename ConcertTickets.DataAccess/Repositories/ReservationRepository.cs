@@ -78,6 +78,66 @@ public class ReservationRepository : IReservationRepository
     {
         await _db.SaveChangesAsync(ct);
     }
+
+    public async Task<int> GetReservedCountExcludingReservationAsync(
+    int concertId,
+    int regionSeatingId,
+    int reservationId,
+    CancellationToken ct = default)
+    {
+        return await _db.ReservationItems
+            .Where(i =>
+                i.RegionSeatingId == regionSeatingId &&
+                i.ReservationId != reservationId &&
+                i.Reservation != null &&
+                i.Reservation.ConcertId == concertId &&
+                i.Reservation.Status != "Cancelled")
+            .SumAsync(i => (int?)i.Quantity, ct) ?? 0;
+    }
+
+    public async Task<Reservation?> GetByLoginCodeForUpdateAsync(
+    string loginCode,
+    CancellationToken ct = default)
+    {
+        loginCode = (loginCode ?? "").Trim().ToUpperInvariant();
+
+        return await _db.Reservations
+            .Include(r => r.Items)
+                .ThenInclude(i => i.RegionSeating)
+            .Include(r => r.Currency)
+            .Include(r => r.Concert)
+            .Include(r => r.GeneratedPromoCode)
+            .Include(r => r.UsedPromoCode)
+            .FirstOrDefaultAsync(r => r.LoginCode == loginCode, ct);
+    }
+
+    public async Task ReplaceItemsAsync(
+    int reservationId,
+    List<ReservationItem> newItems,
+    CancellationToken ct = default)
+    {
+        var existingItems = await _db.ReservationItems
+            .Where(i => i.ReservationId == reservationId)
+            .ToListAsync(ct);
+
+        _db.ReservationItems.RemoveRange(existingItems);
+
+        await _db.ReservationItems.AddRangeAsync(newItems, ct);
+    }
+    public async Task<bool> ExistsForCurrencyAsync(int currencyId, CancellationToken ct = default)
+    {
+        return await _db.Reservations.AnyAsync(r => r.CurrencyId == currencyId, ct);
+    }
+
+    public async Task<bool> ExistsForRegionAsync(int regionSeatingId, CancellationToken ct = default)
+    {
+        return await _db.ReservationItems.AnyAsync(i => i.RegionSeatingId == regionSeatingId, ct);
+    }
+
+    public async Task<bool> ExistsForConcertAsync(int concertId, CancellationToken ct = default)
+    {
+        return await _db.Reservations.AnyAsync(r => r.ConcertId == concertId, ct);
+    }
 }
    
 

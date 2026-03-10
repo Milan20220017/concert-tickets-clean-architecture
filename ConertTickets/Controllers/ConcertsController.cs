@@ -63,10 +63,17 @@ public class ConcertsController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
+    public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
-        var ok = await _service.DeleteAsync(id, ct);
-        return ok ? NoContent() : NotFound();
+        try
+        {
+            var ok = await _service.DeleteAsync(id, ct);
+            return ok ? NoContent() : NotFound();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
     [HttpGet]
     public async Task<IActionResult> GetAll(
@@ -94,7 +101,6 @@ public class ConcertsController : ControllerBase
 
         return Ok(filteredConcerts);
     }
-
     [HttpGet("{concertId:int}/regions-availability")]
     public async Task<IActionResult> GetRegionsAvailability(int concertId, CancellationToken ct = default)
     {

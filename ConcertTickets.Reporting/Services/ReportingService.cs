@@ -1,6 +1,7 @@
 ﻿using ConcertTickets.Reporting.Data;
 using ConcertTickets.Reporting.DTO;
 using Microsoft.EntityFrameworkCore;
+
 namespace ConcertTickets.Reporting.Services;
 
 public class ReportingService
@@ -14,51 +15,39 @@ public class ReportingService
 
     public async Task<List<ConcertSalesReportDto>> GetConcertSalesAsync(CancellationToken ct = default)
     {
-        var result = await _db.ReservationEventLogs
+        return await _db.ReservationEventLogs
+            .AsNoTracking()
             .GroupBy(x => x.ConcertId)
             .Select(g => new ConcertSalesReportDto
             {
                 ConcertId = g.Key,
-                CreatedTickets = g
-                    .Where(x => x.EventType == "ReservationCreated")
-                    .Sum(x => x.TicketCount),
-
-                CancelledTickets = g
-                    .Where(x => x.EventType == "ReservationCancelled")
-                    .Sum(x => x.TicketCount),
-
+                CreatedTickets = g.Sum(x => x.EventType == "ReservationCreated" ? x.TicketCount : 0),
+                CancelledTickets = g.Sum(x => x.EventType == "ReservationCancelled" ? x.TicketCount : 0),
                 NetTicketsSold =
-                    g.Where(x => x.EventType == "ReservationCreated").Sum(x => x.TicketCount)
-                    - g.Where(x => x.EventType == "ReservationCancelled").Sum(x => x.TicketCount)
+                    g.Sum(x => x.EventType == "ReservationCreated" ? x.TicketCount : 0) -
+                    g.Sum(x => x.EventType == "ReservationCancelled" ? x.TicketCount : 0)
             })
             .OrderByDescending(x => x.NetTicketsSold)
+            .ThenBy(x => x.ConcertId)
             .ToListAsync(ct);
-
-        return result;
     }
 
     public async Task<List<LocationSalesReportDto>> GetLocationSalesAsync(CancellationToken ct = default)
     {
-        var result = await _db.ReservationEventLogs
-            .GroupBy(x => x.LocationId)
+        return await _db.ReservationEventLogs
+            .AsNoTracking()
+            .GroupBy(x => x.LocationId!)
             .Select(g => new LocationSalesReportDto
             {
                 LocationId = g.Key,
-                CreatedTickets = g
-                    .Where(x => x.EventType == "ReservationCreated")
-                    .Sum(x => x.TicketCount),
-
-                CancelledTickets = g
-                    .Where(x => x.EventType == "ReservationCancelled")
-                    .Sum(x => x.TicketCount),
-
+                CreatedTickets = g.Sum(x => x.EventType == "ReservationCreated" ? x.TicketCount : 0),
+                CancelledTickets = g.Sum(x => x.EventType == "ReservationCancelled" ? x.TicketCount : 0),
                 NetTicketsSold =
-                    g.Where(x => x.EventType == "ReservationCreated").Sum(x => x.TicketCount)
-                    - g.Where(x => x.EventType == "ReservationCancelled").Sum(x => x.TicketCount)
+                    g.Sum(x => x.EventType == "ReservationCreated" ? x.TicketCount : 0) -
+                    g.Sum(x => x.EventType == "ReservationCancelled" ? x.TicketCount : 0)
             })
             .OrderByDescending(x => x.NetTicketsSold)
+            .ThenBy(x => x.LocationId)
             .ToListAsync(ct);
-
-        return result;
     }
 }
